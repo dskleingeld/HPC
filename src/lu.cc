@@ -1,119 +1,14 @@
-#include <cstdio>
-#include <ctime>
-#include <iostream>
-#include <cstring>
+#include "lu.h"
+#include "libs/dbg/dbg.h"
 
-#include "matrix.h"
-
-/* Code taken from the GLIBC manual.
- *
- * Subtract the ‘struct timespec’ values X and Y,
- * storing the result in RESULT.
- * Return 1 if the difference is negative, otherwise 0.
- */
-static int
-timespec_subtract (struct timespec *result,
-                   struct timespec *x,
-                   struct timespec *y)
-{
-  /* Perform the carry for the later subtraction by updating y. */
-  if (x->tv_nsec < y->tv_nsec) {
-    int nsec = (y->tv_nsec - x->tv_nsec) / 1000000000 + 1;
-    y->tv_nsec -= 1000000000 * nsec;
-    y->tv_sec += nsec;
-  }
-  if (x->tv_nsec - y->tv_nsec > 1000000000) {
-    int nsec = (x->tv_nsec - y->tv_nsec) / 1000000000;
-    y->tv_nsec += 1000000000 * nsec;
-    y->tv_sec -= nsec;
-  }
-
-  /* Compute the time remaining to wait.
-     tv_nsec is certainly positive. */
-  result->tv_sec = x->tv_sec - y->tv_sec;
-  result->tv_nsec = x->tv_nsec - y->tv_nsec;
-
-  /* Return 1 if result is negative. */
-  return x->tv_sec < y->tv_sec;
+void PermutationMatrix::mark_swap(const int row, const int replacement_row){
+  permuted_to_original_index[row] = replacement_row;
+  permuted_to_original_index[replacement_row] = row;
 }
 
-
-/* Global variables holding the matrix data. To complete this assignment
- * you are requested to only use arrays and access these arrays with
- * subscripts. Do not use pointers.
- */
-
-const int max_n_elements = 131072;
-const int max_n_rows = 16384;
-const int max_n_columns = max_n_rows; //matrices must be square
-
-struct CompressedRowMatrix{
-  double values[max_n_elements];
-  int col_ind[max_n_elements];
-  int row_ptr_begin[max_n_rows];
-  int row_ptr_end[max_n_rows]; //inclusive (points to last element)
-
-  int n_rows;
-};
-
-
-
-int numb_elements_in_row(int row, CompressedRowMatrix& matrix){
-  return matrix.row_ptr_end[row] - matrix.row_ptr_begin[row];
-}
-
-//out_vector needs to be all zeros for length n_rows;
-void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]){
-  for (int row=0; row<matrix.n_rows; row++){
-    for (int element_in_row=0; element_in_row<numb_elements_in_row(row, matrix); element_in_row++){
-      auto flat_index = matrix.row_ptr_begin[row] + element_in_row;
-      //auto column = col_ind[flat_index];
-      out_vector[row] += matrix.values[flat_index] * in_vector[row];
-    }
-  }
-}
-
-void print_array(double vector[], int length){
-  for (int i=0; i<length; i++){
-    std::cout<<vector[i]<<", ";
-  }
-  std::cout<<std::endl;
-}
-
-
-void init_array(double array[], int len, double pattern[]){
-  for(int i=0; i<len; i++){
-    array[i] = pattern[i%2];
-  }
-}
-
-bool row_has_ok_pivot(CompressedRowMatrix& lu, int current_row, int target_row){
-  for (int flat_index = lu.row_ptr_begin[current_row]; 
-           flat_index <= lu.row_ptr_end[current_row]; 
-           flat_index++){
-  
-    int column_index = lu.col_ind[flat_index];
-    double value = lu.values[flat_index];
-    
-    if (column_index == target_row && value >= MINIMAL_PIVOT_SIZE){
-      return true;
-    }
-  }
-  return false;
-}
-
-
-template<typename T>
-void array_to_temp(T array[], T temp[], size_t start, size_t stop){
-  for (size_t i = start, j=0; i<stop; i++, j++){
-    temp[i] = array[j];
-  }
-}
-
-template<typename T>
-void array_from_temp(T array[], T temp[], size_t start, size_t stop){
-  for (size_t i = start, j=0; i<stop; i++, j++){
-    array[i] = temp[j];
+void PermutationMatrix::identity(size_t n_rows){
+  for(size_t row_idx=0; row_idx<n_rows; row_idx++){
+    permuted_to_original_index[row_idx] = row_idx;
   }
 }
 
@@ -122,40 +17,77 @@ void array_from_temp(T array[], T temp[], size_t start, size_t stop){
 //copy from (1-2) into memory
 //copy row to the end.
 //copy replacement-row back into the array
-void swap_rows(CompressedRowMatrix& lu,
-               int row, int replacement_row){
+void CompressedRowMatrix::swap_rows(const int row, const int replacement_row){
 
-  double temp_values[max_n_columns];
-  int temp_col_ind[max_n_columns];
+  auto row_begin = row_ptr_begin[row];
+  row_ptr_begin[row] = row_ptr_begin[replacement_row];
+  row_ptr_begin[replacement_row] = row_begin;
 
-  //backup into temp
-  size_t n = lu.row_ptr_end[row]-lu.row_ptr_end[replacement_row];
-  array_to_temp(lu.values, temp_values, lu.row_ptr_end[row], lu.row_ptr_end[replacement_row]);
-  array_to_temp(lu.col_ind, temp_col_ind, lu.row_ptr_end[row], lu.row_ptr_end[replacement_row]);
-
-
+  auto row_end = row_ptr_end[row];
+  row_ptr_end[row] = row_ptr_end[replacement_row];
+  row_ptr_end[replacement_row] = row_end;  
 }
 
-void mark_no_swap(CompressedRowMatrix& p, int row){
-
+int CompressedRowMatrix::n_elements_in_row(const int row_index){
+  return row_ptr_end[row_index] - row_ptr_begin[row_index];
 }
 
-void mark_swap(CompressedRowMatrix& p, int row, int replacement_row){
-
+//out_vector needs to be all zeros for length n_rows;
+void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]){
+  for (int row=0; row<matrix.n_rows; row++){
+    for (int element_in_row=0; element_in_row<matrix.n_elements_in_row(row); element_in_row++){
+      auto flat_index = matrix.row_ptr_begin[row] + element_in_row;
+      //auto column = col_ind[flat_index];
+      out_vector[row] += matrix.values[flat_index] * in_vector[row];
+    }
+  }
 }
 
-void init_p(CompressedRowMatrix& p){
-  memset(p.row_ptr_begin, 0, max_n_rows);
-  memset(p.row_ptr_end, 0, max_n_rows);
+void print_array(const double array[], const size_t length){
+  std::cout<<"array: [";
+  for (size_t i=0; i<length; i++){
+    std::cout<<array[i]<<", ";
+  }
+  std::cout<<"]"<<std::endl;
+}
+
+
+void init_array(double array[], const int len, const double pattern[]){
+  for(int i=0; i<len; i++){
+    array[i] = pattern[i%2];
+  }
+}
+
+bool row_has_ok_pivot(CompressedRowMatrix& lu, const int current_row, 
+                      const int diagonal, int& flat_index){
+  //dbg("row_has_ok_pivot");
+  //dbg(lu.row_ptr_begin[current_row]);
+  //dbg(lu.row_ptr_end[current_row]);
+  for (flat_index = lu.row_ptr_begin[current_row]; 
+       flat_index <= lu.row_ptr_end[current_row]; 
+       flat_index++){
+  
+    int column_index = lu.col_ind[flat_index];
+    //dbg(flat_index);
+    //dbg(column_index);
+    double value = lu.values[flat_index];
+    
+    //if there is no value that is a pivot, the value must be zero which is to small
+    if (column_index == diagonal){ //opt. abort if column index > target_row
+      if (value >= MINIMAL_PIVOT_SIZE){
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 //TODO, what to do it there is no pivot? (all are zero)
-constexpr double MINIMAL_PIVOT_SIZE = 0.1;
-void apply_pivots(CompressedRowMatrix& p, CompressedRowMatrix& lu){
-  init_p(p);
-  for (int row=0; row<lu.n_rows; row++){
-    if (row_has_ok_pivot(lu, row, row)) {
-      mark_no_swap(p, row);
+double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_row){
+  int pivot_flat_index;
+  for (int row=pivot_row; row<lu.n_rows; row++){
+    if (row_has_ok_pivot(lu, row, row, pivot_flat_index)) {
+      return lu.values[pivot_flat_index];
     } else {
 
       //there is no pivot for this row at its current position
@@ -163,86 +95,227 @@ void apply_pivots(CompressedRowMatrix& p, CompressedRowMatrix& lu){
       //iter through column, element is replacement_pivot 
       for (int replacement_row=row; replacement_row<lu.n_rows; replacement_row++){
         //TODO what if no row has a suitable replacement? can we leave it?
-        if (row_has_ok_pivot(lu, replacement_row, row)){
-          swap_rows(lu, row, replacement_row);
-          mark_swap(p, row, replacement_row);
-          break;
+        if (row_has_ok_pivot(lu, replacement_row, row, pivot_flat_index)){
+          lu.swap_rows(row, replacement_row);
+          p.mark_swap(row, replacement_row);
+          return lu.values[pivot_flat_index];
         }
       }
     }
+  }
+  //no ok row could be found
+  for(int flat_index=lu.row_ptr_begin[pivot_row]; flat_index<=lu.row_ptr_end[pivot_row];
+      flat_index++){
+
+    if (lu.col_ind[flat_index] == pivot_row){
+      return lu.values[flat_index];
+    }
+  }
+  return 0.0;
 }
 
-//TODO what happens when there is no pivot?
-void factorise_in_place(CompressedRowMatrix& a){
+bool find_column(CompressedRowMatrix& m, int haystack_row, 
+                 int needle_column, int& flat_index){
+  
+  //go through the haystack
+  for(flat_index = m.row_ptr_begin[haystack_row]; 
+      flat_index<=m.row_ptr_end[haystack_row]; 
+      flat_index++){
 
+    auto hay_column = m.col_ind[flat_index];
+    if (hay_column > needle_column){
+      return false;
+    } else if (hay_column == needle_column) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template<typename T>
+void move_array(T array[], int source, int destination, int len){
+  for (int i=0; i<len; i++){
+    array[destination+i] = array[source+i];
+  }
+}
+
+//opt last run of stop and copy should not buffer extra space
+void CompressedRowMatrix::stop_and_copy(){
+  //old space at the begin of the array
+  if (old_space_end == MAX_N_ELEMENTS){
+    free = old_space_end + 1;
+    old_space_end = 2*MAX_N_ELEMENTS;
+  } else { //old space at the end of the array
+    free = 0;
+    old_space_end = MAX_N_ELEMENTS;
+  }
+
+  for(int row=0; row<n_rows; row++){
+    //move row
+    auto len = row_ptr_end[row] - row_ptr_begin[row];
+    move_array(values, row_ptr_begin[row], free, len);
+    
+    //set pointers right
+    row_ptr_begin[row] = free;
+    row_ptr_end[row] = free + len;
+    row_ptr_reserved[row] = free + len + N_TO_OVERALLOCATE; 
+
+    free += len + N_TO_OVERALLOCATE;
+  }
+}
+
+void CompressedRowMatrix::allocate(int numb_elements, int& ptr_begin, 
+                                   int& ptr_end, int& ptr_reserved){
+
+  if(old_space_end-free<(numb_elements+N_TO_OVERALLOCATE)){
+    //do stop and copy to compact
+    stop_and_copy();
+  }
+
+  ptr_begin = free;
+  ptr_end = free+numb_elements;
+  ptr_reserved = free + numb_elements +N_TO_OVERALLOCATE;
+  free+=numb_elements +N_TO_OVERALLOCATE;
+}
+
+int DenseIndexedRow::make_sorted_col_ind(int sorted_col_ind[]){
+  int k=0, i=0, j=init_columns;
+  while(i<init_columns && j<added_columns){
+    if(used_col_ind[i] < used_col_ind[j]){
+      sorted_col_ind[k] = used_col_ind[i];
+      i++; k++;
+    } else if (used_col_ind[i] == used_col_ind[j]) {
+      sorted_col_ind[k] = used_col_ind[i];
+      i++; j++; k++;
+    } else {
+      sorted_col_ind[k] = used_col_ind[j];
+      j++; k++;
+    }
+  }
+  //if not done with i, copy from the i area 
+  //in used_col_ind to the sorted array
+  for(;i<init_columns; i++, k++){
+    sorted_col_ind[k] = used_col_ind[i];
+  } 
+  //if not done with j, copy from the j area 
+  //in used_col_ind to the sorted array
+  for(;j<added_columns; j++, k++){
+    sorted_col_ind[k] = used_col_ind[j];
+  }
+  dbg(k);
+  return k;
+}
+
+//geather
+void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row, 
+                                     int row, CompressedRowMatrix& lu,
+                                     int dense_row_offset){
+
+  static int sorted_col_ind[MAX_N_COLLUMNS];
+  auto numb_elements = dense_row.make_sorted_col_ind(sorted_col_ind);
+
+  dbg(lu.row_ptr_reserved[row]);
+  dbg(lu.row_ptr_begin[row]);
+  //+1 as lu.row_ptr_reserved points to the last element still reserved for
+  //this row. thus reserved-row is one smaller then the reserved number of elements
+  if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < numb_elements){
+    dbg("ALLOCATING!");
+    //allocate more space
+    //opt, find way to just extend reserved space if there is free space
+    lu.allocate(numb_elements, lu.row_ptr_begin[row], 
+                lu.row_ptr_end[row], lu.row_ptr_reserved[row]);
+
+    //TODO: copy values not in dense_row!
+  }
+
+  //geather into sparse row
+  auto flat_index = lu.row_ptr_begin[row]+dense_row_offset;
+  dbg(dense_row_offset);
+  for(int i=0; i<numb_elements; i++){
+    auto column = sorted_col_ind[i];
+    auto value = dense_row.values[column];
+    if (value!=0){
+      dbg(value);
+      dbg(column);
+      lu.values[flat_index] = value;
+      lu.col_ind[flat_index] = column;
+      flat_index++;
+    }
+  }
+  //update row ptr in case row shrunk
+  lu.row_ptr_end[row] = flat_index;
+}
+
+//adds pivot_row, scaled by pivot, to other_row
+void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivot){
+
+  //walk until we get the flat index of the pivot column in the other row
+  auto pivot_column = pivot_row;
+  int pivot_column_in_other_row; //set by find column
+  bool found = find_column(lu, other_row, pivot_column, pivot_column_in_other_row);
+  if (!found){dbg("not found"); return;} //we are done 
+  
+  //set the element in the column below the pivot 
+  dbg(lu.values[pivot_column_in_other_row]);
+  dbg(pivot);
+  auto mult = lu.values[pivot_column_in_other_row]/pivot;
+  dbg(mult);
+
+  DenseIndexedRow dense_row; //opt make static, and reset each run
+  dense_row.values[pivot_column] = mult;
+  dense_row.used_col_ind[dense_row.init_columns] = pivot_column;
+  dense_row.init_columns++;
+
+  //scatter the other row to a temp row in dense form
+  for(int k=pivot_column_in_other_row+1; k<=lu.row_ptr_end[other_row]; k++){
+    auto value = lu.values[k]; 
+    auto column = lu.col_ind[k];
+    dense_row.values[column] = value;
+    dense_row.used_col_ind[dense_row.init_columns] = column;
+    dense_row.init_columns++;
+  }
+  
+  //add scaled pivot_row to scatterd other row in dense form
+  for(int k=lu.row_ptr_begin[pivot_row]+1; k<=lu.row_ptr_end[pivot_row]; k++){
+    auto column = lu.col_ind[k];
+    dbg(column);
+    if (column > pivot_column){
+      dbg(other_row);
+      dbg(dense_row.values[column]);
+      dbg(lu.values[k]);
+      dbg(lu.values[k]*mult);
+      dense_row.values[column] -= mult*lu.values[k];
+      dense_row.added_columns++;
+      dbg(dense_row.values[column]);
+    }
+  }
+  std::cout<<"dense row: "
+           <<dense_row.values[0]<<"  "
+           <<dense_row.values[1]<<"  "
+           <<dense_row.values[2]<<"  "
+           <<dense_row.values[3]<<"  "<<std::endl;
+  int dense_row_offset = pivot_column_in_other_row - lu.row_ptr_begin[other_row];
+  overwrite_sparse_row_with_dense(dense_row, other_row, lu, dense_row_offset);
 }
 
 //using the opposites of the multiplies used in the 
 //row operations to obtain U, we build L
-void lu_factorise(CompressedRowMatrix& a, 
-                  CompressedRowMatrix& lu,
-                  CompressedRowMatrix& p){
+void lu_factorise(CompressedRowMatrix& lu,
+                  PermutationMatrix& p){
 
-  lu = a;                                               
-  apply_pivots(p, lu);
-  factorise_in_place(lu);
-}
+  p.identity(lu.n_rows);
+  auto n_columns = lu.n_rows;
+  
+  for(int column=0; column<n_columns; column++){
+    dbg(column);
+    double pivot = partial_pivot(p, lu, column);
+    dbg(pivot);
+    dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
 
-
-int
-main(int argc, char **argv)
-{
-  if (argc != 2){
-    fprintf(stderr, "usage: %s <filename>\n", argv[0]);
-    return -1;
+    //for each row below the current pivot
+    for(int row = column+1; row<lu.n_rows; row++){
+      dbg(row);
+      add_rows(lu, column, row, pivot);
+    }
   }
-
-  int nnz, n_rows, n_cols;
-  bool ok(false);
-
-  CompressedRowMatrix a;
-  ok = load_matrix_market(argv[1], max_n_elements, max_n_rows,
-                          nnz, a.n_rows, n_cols,
-                          a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
-  if (!ok){
-    fprintf(stderr, "failed to load matrix.\n");
-    return -1;
-  }
-
-  //solution vectors
-  double solution_vector[max_n_rows];
-  double pattern[] = {1., 1.};
-  //double pattern[] = {.1, .1};
-  //double pattern[] = {1., -1.};
-  //double pattern[] = {5.,-5.};
-  //double pattern[] = {100.,-100.};
-  init_array(solution_vector, n_rows, pattern);
-
-  double b[max_n_rows];
-  matrix_vector_product(a, solution_vector, b);
-  print_array(solution_vector, n_rows);
-  //print_array(b, n_rows);
-
-  /* For debugging, can be removed when implementation is finished. */
-  //dump_nonzeros(n_rows, values, col_ind, row_ptr_begin, row_ptr_end);
-
-
-
-  struct timespec start_time;
-  clock_gettime(CLOCK_REALTIME, &start_time);
-
-  /* Perform LU factorization here */
-
-  struct timespec end_time;
-  clock_gettime(CLOCK_REALTIME, &end_time);
-
-
-  struct timespec elapsed_time;
-  timespec_subtract(&elapsed_time, &end_time, &start_time);
-
-  double elapsed = (double)elapsed_time.tv_sec +
-      (double)elapsed_time.tv_nsec / 1000000000.0;
-  fprintf(stderr, "elapsed time: %f s\n", elapsed);
-
-  return 0;
 }

@@ -2,16 +2,15 @@ CC = gcc
 CXX = g++
 CFLAGS = -Wall -Wextra -O3 -g
 
-all:	lu
+all: lu
 
-lu:	lu.o mmio.o matrix.o
+lu: main.o lu.o mmio.o matrix.o
 	$(CXX) $(CFLAGS) -o $@ $^ -lrt
 
-
-mmio.o:	mmio.c
+mmio.o:	mmio.c #note this is C not C++ 
 	$(CC) $(CFLAGS) -c mmio.c
 
-%.o:	%.cc
+%.o:	%.cc #all other object files are made with C++ compiler
 	$(CXX) $(CFLAGS) -c $<
 
 clean:
