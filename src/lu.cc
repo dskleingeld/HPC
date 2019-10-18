@@ -1,6 +1,8 @@
 #include "lu.h"
 #include "libs/dbg/dbg.h"
 
+//regex to remove debug statements: "[ \t]+dbg\([0-z.\*]+\);\n"
+
 void PermutationMatrix::mark_swap(const int row, const int replacement_row){
   permuted_to_original_index[row] = replacement_row;
   permuted_to_original_index[replacement_row] = row;
@@ -68,8 +70,6 @@ bool row_has_ok_pivot(CompressedRowMatrix& lu, const int current_row,
        flat_index++){
   
     int column_index = lu.col_ind[flat_index];
-    //dbg(flat_index);
-    //dbg(column_index);
     double value = lu.values[flat_index];
     
     //if there is no value that is a pivot, the value must be zero which is to small
@@ -202,7 +202,6 @@ int DenseIndexedRow::make_sorted_col_ind(int sorted_col_ind[]){
   for(;j<added_columns; j++, k++){
     sorted_col_ind[k] = used_col_ind[j];
   }
-  dbg(k);
   return k;
 }
 
@@ -214,8 +213,6 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   static int sorted_col_ind[MAX_N_COLLUMNS];
   auto numb_elements = dense_row.make_sorted_col_ind(sorted_col_ind);
 
-  dbg(lu.row_ptr_reserved[row]);
-  dbg(lu.row_ptr_begin[row]);
   //+1 as lu.row_ptr_reserved points to the last element still reserved for
   //this row. thus reserved-row is one smaller then the reserved number of elements
   if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < numb_elements){
@@ -231,19 +228,23 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   //geather into sparse row
   auto flat_index = lu.row_ptr_begin[row]+dense_row_offset;
   dbg(dense_row_offset);
+  dbg(numb_elements);
   for(int i=0; i<numb_elements; i++){
     auto column = sorted_col_ind[i];
     auto value = dense_row.values[column];
-    if (value!=0){
-      dbg(value);
-      dbg(column);
-      lu.values[flat_index] = value;
-      lu.col_ind[flat_index] = column;
-      flat_index++;
+    if (value==0){
+      dbg("skipping value");
+      continue;
     }
+    
+    lu.values[flat_index] = value;
+    dbg(value);
+    dbg(column);
+    lu.col_ind[flat_index] = column;
+    flat_index++;
   }
   //update row ptr in case row shrunk
-  lu.row_ptr_end[row] = flat_index;
+  lu.row_ptr_end[row] = flat_index-1;
 }
 
 //adds pivot_row, scaled by pivot, to other_row
@@ -256,10 +257,7 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   if (!found){dbg("not found"); return;} //we are done 
   
   //set the element in the column below the pivot 
-  dbg(lu.values[pivot_column_in_other_row]);
-  dbg(pivot);
   auto mult = lu.values[pivot_column_in_other_row]/pivot;
-  dbg(mult);
 
   DenseIndexedRow dense_row; //opt make static, and reset each run
   dense_row.values[pivot_column] = mult;
@@ -278,15 +276,9 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   //add scaled pivot_row to scatterd other row in dense form
   for(int k=lu.row_ptr_begin[pivot_row]+1; k<=lu.row_ptr_end[pivot_row]; k++){
     auto column = lu.col_ind[k];
-    dbg(column);
-    if (column > pivot_column){
-      dbg(other_row);
-      dbg(dense_row.values[column]);
-      dbg(lu.values[k]);
-      dbg(lu.values[k]*mult);
+      if (column > pivot_column){
       dense_row.values[column] -= mult*lu.values[k];
       dense_row.added_columns++;
-      dbg(dense_row.values[column]);
     }
   }
   std::cout<<"dense row: "
@@ -307,15 +299,12 @@ void lu_factorise(CompressedRowMatrix& lu,
   auto n_columns = lu.n_rows;
   
   for(int column=0; column<n_columns; column++){
-    dbg(column);
-    double pivot = partial_pivot(p, lu, column);
-    dbg(pivot);
-    dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
+      double pivot = partial_pivot(p, lu, column);
+      dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
 
     //for each row below the current pivot
     for(int row = column+1; row<lu.n_rows; row++){
-      dbg(row);
-      add_rows(lu, column, row, pivot);
+          add_rows(lu, column, row, pivot);
     }
   }
 }
