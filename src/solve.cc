@@ -29,12 +29,9 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         pb[row] = org_b[p.permuted_to_original_index[row]];
     }
 
-    for (int i=0; i<4; i++) {dbg(pb[i]);}
-
     //forward subsitution, solves y from Ly=Pb
     for(int row=0; row<lu.n_rows; row++){
         y[row] = pb[row];
-        dbg(row);
 
         //iterate over all columns of A
         //if A[] is zero nothing happens to c =>
@@ -43,27 +40,19 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         for(int flat_idx=lu.row_ptr_begin[row]; 
             flat_idx<=lu.row_ptr_end[row]; flat_idx++){
 
+            //only iterate till column<row-1
             auto column = lu.col_ind[flat_idx];
-            dbg(row-1);
-            dbg(column);
-            if(column>row-1){
-                dbg("breaking");
-                dbg(column);
-                break;
-            }
+            if(column>row-1){break;}
 
             auto A = lu.values[flat_idx];
-            dbg(A);
-            dbg(y[column]);
             y[row] -= A * y[column];
-            dbg(y[row]);
         }
     }
 
     for (int i=0; i<4; i++) {dbg(y[i]);}   
 
     //back subsitution, solves x from Ux=y
-    for(int row = lu.n_rows-1; row>-1; row--){
+    for(int row = lu.n_rows-1; row>=0; row--){
         x[row] = y[row];
         //iterate over all columns of A
         //if A[] is zero nothing happens to c =>
@@ -85,4 +74,5 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         }
         x[row] = x[row] / A;
     }
+    for (int i=0; i<4; i++) {dbg(x[i]);}
 }
