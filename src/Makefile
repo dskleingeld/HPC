@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -O3 -g
 
 all: lu
 
-lu: main.o lu.o mmio.o matrix.o
+lu: main.o lu.o mmio.o matrix.o solve.o
 	$(CXX) $(CFLAGS) -o $@ $^ -lrt
 
 mmio.o:	mmio.c #note this is C not C++ 

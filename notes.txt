@@ -1,0 +1,24 @@
+https://stackoverflow.com/questions/12265698/multiplication-of-a-sparse-matrix-in-compressed-column-storage-with-a-column-vec
+https://de.wikipedia.org/wiki/Compressed_Row_Storage
+
+http://mathfaculty.fullerton.edu/mathews/n2003/LUFactorMod.html
+
+why PLU over gaussian as it is the same....
+https://math.stackexchange.com/questions/266355/necessity-advantage-of-lu-decomposition-over-gaussian-elimination
+
+online calc:
+https://www.easycalculation.com/matrix/lu-decomposition-matrix.php
+
+doolittle algo:
+https://www.engr.colostate.edu/~thompson/hPage/CourseMat/Tutorials/CompMethods/doolittle.pdf
+https://vismor.com/documents/network_analysis/matrix_algorithms/S4.SS2.php
+
+//
+we use stop and copy GC
+
+//nice online calc for LUP
+http://lampx.tugraz.at/~hadley/num/ch2/2.3a.php
+
+
+//forward and back subsitution
+http://www.math.iit.edu/~fass/477577_Chapter_7.pdf

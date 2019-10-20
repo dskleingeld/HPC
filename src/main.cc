@@ -1,4 +1,5 @@
 #include "lu.h"
+#include "solve.h"
 
 /* Code taken from the GLIBC manual.
  *
@@ -71,6 +72,7 @@ main(int argc, char **argv)
   init_array(solution_vector, a.n_rows, pattern);
 
   double b[MAX_N_ROWS];
+  double c[MAX_N_ROWS];
   matrix_vector_product(a, solution_vector, b);
   //std::cout<<"solution vector: ";
   //print_array(solution_vector, a.n_rows);
@@ -91,6 +93,17 @@ main(int argc, char **argv)
 
   std::cout<<"nonzeros after:"<<std::endl;
   dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
+
+  solve_system(a, p, b, c);
+  //check if any elements are wrong
+  for(int i=0; i<a.n_rows; i++){
+    if (c[i]!=solution_vector[i]){
+      std::cerr<<"INVALID SOLUTION"
+               <<" \trow: "<<i<<" \tcalculated sol:"
+               <<c[i]<<" \tcorrect sol:"<<solution_vector[i]
+               <<std::endl;
+    }
+  }
 
   struct timespec elapsed_time;
   timespec_subtract(&elapsed_time, &end_time, &start_time);

@@ -31,18 +31,7 @@ void CompressedRowMatrix::swap_rows(const int row, const int replacement_row){
 }
 
 int CompressedRowMatrix::n_elements_in_row(const int row_index){
-  return row_ptr_end[row_index] - row_ptr_begin[row_index];
-}
-
-//out_vector needs to be all zeros for length n_rows;
-void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]){
-  for (int row=0; row<matrix.n_rows; row++){
-    for (int element_in_row=0; element_in_row<matrix.n_elements_in_row(row); element_in_row++){
-      auto flat_index = matrix.row_ptr_begin[row] + element_in_row;
-      //auto column = col_ind[flat_index];
-      out_vector[row] += matrix.values[flat_index] * in_vector[row];
-    }
-  }
+  return row_ptr_end[row_index] - row_ptr_begin[row_index]+1;
 }
 
 void print_array(const double array[], const size_t length){
@@ -219,27 +208,26 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
     dbg("ALLOCATING!");
     //allocate more space
     //opt, find way to just extend reserved space if there is free space
+    auto old_begin = lu.row_ptr_begin[row];
     lu.allocate(numb_elements, lu.row_ptr_begin[row], 
                 lu.row_ptr_end[row], lu.row_ptr_reserved[row]);
 
-    //TODO: copy values not in dense_row!
+    //copy values not in dense_row
+    move_array(lu.values, old_begin, lu.row_ptr_begin[row], dense_row_offset);
+    move_array(lu.col_ind, old_begin, lu.row_ptr_begin[row], dense_row_offset);
   }
 
   //geather into sparse row
   auto flat_index = lu.row_ptr_begin[row]+dense_row_offset;
-  dbg(dense_row_offset);
-  dbg(numb_elements);
   for(int i=0; i<numb_elements; i++){
     auto column = sorted_col_ind[i];
     auto value = dense_row.values[column];
     if (value==0){
-      dbg("skipping value");
+      dbg("skipping zero value");
       continue;
     }
     
     lu.values[flat_index] = value;
-    dbg(value);
-    dbg(column);
     lu.col_ind[flat_index] = column;
     flat_index++;
   }
@@ -254,7 +242,7 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   auto pivot_column = pivot_row;
   int pivot_column_in_other_row; //set by find column
   bool found = find_column(lu, other_row, pivot_column, pivot_column_in_other_row);
-  if (!found){dbg("not found"); return;} //we are done 
+  if (!found){dbg("no pivot in this column"); return;} //we are done 
   
   //set the element in the column below the pivot 
   auto mult = lu.values[pivot_column_in_other_row]/pivot;
