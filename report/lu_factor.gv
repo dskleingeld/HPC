@@ -1,0 +1,38 @@
+digraph finite_state_machine {
+    rankdir=LR; 
+    size="8,5"
+
+    node [shape = point ]; qi
+    node [shape = circle, label="bytes available", fontsize=14] S;
+    node [shape = circle, label="got packet", fontsize=12] q1;
+    node [shape = circle, label="send ACK", fontsize=12] q2;
+    node [shape = circle, label="send NAK", fontsize=12] q3;
+    node [shape = point ]; q0
+
+    S -> S  [ label = "read_into_buffer" ];
+    S -> q1  [ label = "read_into_buffer" ];
+    q1 -> q2  [ label = "valid CRC" ];
+    q1 -> q3  [ label = "invalid CRC" ];
+    q3 -> S  [ label = "await resend" ];
+    qi -> S;
+    q2 -> q0 [ label= "process package" ];
+    
+/////////////////////////////////////////////////////
+
+    node [shape = point,  label="", fontsize=12] ]; start
+    node [shape = circle, label="", fontsize=12] lu_factorise;
+    node [shape = circle, label="", fontsize=12] set_identity;
+    node [shape = circle, label="", fontsize=12] columns;
+    node [shape = circle, label="", fontsize=12] q3;
+    node [shape = point ]; q0
+
+    start -> 		lu_factorise;
+    lu_factorise -> 
+    S -> q1  [ label = "read_into_buffer" ];
+    q1 -> q2  [ label = "valid CRC" ];
+    q1 -> q3  [ label = "invalid CRC" ];
+    q3 -> S  [ label = "await resend" ];
+    qi -> S;
+    q2 -> q0 [ label= "process package" ];
+
+}
