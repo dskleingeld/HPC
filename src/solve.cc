@@ -34,16 +34,29 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
     //forward subsitution, solves y from Ly=Pb
     for(int row=0; row<lu.n_rows; row++){
         y[row] = pb[row];
+        dbg(row);
 
         //iterate over all columns of A
         //if A[] is zero nothing happens to c =>
         //we only need to iterate the nonzero elements
         //for(int column=0; column<row-1; column++){
         for(int flat_idx=lu.row_ptr_begin[row]; 
-            flat_idx<lu.row_ptr_end[row]; flat_idx++){
+            flat_idx<=lu.row_ptr_end[row]; flat_idx++){
+
+            auto column = lu.col_ind[flat_idx];
+            dbg(row-1);
+            dbg(column);
+            if(column>row-1){
+                dbg("breaking");
+                dbg(column);
+                break;
+            }
 
             auto A = lu.values[flat_idx];
-            y[row] -= A * pb[row];
+            dbg(A);
+            dbg(y[column]);
+            y[row] -= A * y[column];
+            dbg(y[row]);
         }
     }
 
@@ -58,7 +71,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         //for(int column=row+1; column<row; column++){
         int flat_idx;
         if (find_column(lu, row, row+1, flat_idx)){
-            for(;flat_idx<lu.row_ptr_end[row]; flat_idx++){
+            for(;flat_idx<=lu.row_ptr_end[row]; flat_idx++){
                 auto A = lu.values[flat_idx];
                 auto column = lu.col_ind[flat_idx];
                 x[row] -= A * x[column];
