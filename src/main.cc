@@ -1,5 +1,6 @@
 #include "lu.h"
 #include "solve.h"
+#include <cmath>
 
 /* Code taken from the GLIBC manual.
  *
@@ -79,8 +80,8 @@ main(int argc, char **argv)
   //print_array(b, a.n_rows);
 
   /* For debugging, can be removed when implementation is finished. */
-  std::cout<<"nonzeros before:"<<std::endl;
-  dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
+  //std::cout<<"nonzeros before:"<<std::endl;
+  //dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
 
   struct timespec start_time;
   clock_gettime(CLOCK_REALTIME, &start_time);
@@ -91,25 +92,32 @@ main(int argc, char **argv)
   struct timespec end_time;
   clock_gettime(CLOCK_REALTIME, &end_time);
 
-  std::cout<<"nonzeros after:"<<std::endl;
+  //std::cout<<"nonzeros after:"<<std::endl;
   dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
 
   solve_system(a, p, b, c);
   //check if any elements are wrong
+  bool errors = false;
   for(int i=0; i<a.n_rows; i++){
-    if (c[i]!=solution_vector[i]){
-      std::cerr<<"INVALID SOLUTION"
+    if (abs(c[i]-solution_vector[i])>0.001){
+      errors = true;
+      /*std::cerr<<"INVALID SOLUTION"
                <<" \trow: "<<i<<" \tcalculated sol:"
                <<c[i]<<" \tcorrect sol:"<<solution_vector[i]
-               <<std::endl;
+               <<std::endl;*/
     }
+  }
+  if(errors == false){
+    std::cout<<"NO ERRORS ENCOUNTERD, ALL IS WELL"<<std::endl;
+  } else {
+    dbg("ERROR ENCOUNTERD");
   }
 
   struct timespec elapsed_time;
   timespec_subtract(&elapsed_time, &end_time, &start_time);
 
   double elapsed = (double)elapsed_time.tv_sec +
-      (double)elapsed_time.tv_nsec / 1000000000.0;
+  (double)elapsed_time.tv_nsec / 1000000000.0;
   fprintf(stderr, "elapsed time: %f s\n", elapsed);
 
   return 0;

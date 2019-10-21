@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iostream>
 #include <cstring>
+#include <cmath>
 
 #include "matrix.h"
 
@@ -19,7 +20,7 @@ constexpr int MAX_N_ROWS = 16384;
 constexpr int MAX_N_COLLUMNS = MAX_N_ROWS; //matrices must be square
 
 struct CompressedRowMatrix{
-  double values[MAX_N_ELEMENTS*2];
+  double values[MAX_N_ELEMENTS*2] = {-1.};
   int col_ind[MAX_N_ELEMENTS*2];
   int free; //must be init to n_rows after loading a matrix
   int old_space_end; //end of fromspace
@@ -52,8 +53,7 @@ struct DenseIndexedRow {
 
 void init_array(double array[], const int len, const double pattern[]);
 void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]);
-
-void lu_factorise(CompressedRowMatrix& lu,
-                  PermutationMatrix& p);
+bool find_column(CompressedRowMatrix& m, int haystack_row, int needle_column, int& flat_index);
+void lu_factorise(CompressedRowMatrix& lu, PermutationMatrix& p);
 
 #endif

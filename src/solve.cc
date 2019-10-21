@@ -27,6 +27,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
     //permute vector b to match up LU vect.
     for(int row=0; row<lu.n_rows; row++){
         pb[row] = org_b[p.permuted_to_original_index[row]];
+        //dbg(p.permuted_to_original_index[row]);
     }
 
     //forward subsitution, solves y from Ly=Pb
@@ -49,7 +50,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         }
     }
 
-    for (int i=0; i<4; i++) {dbg(y[i]);}   
+    //for (int i=0; i<4; i++) {dbg(y[i]);}   
 
     //back subsitution, solves x from Ux=y
     for(int row = lu.n_rows-1; row>=0; row--){
@@ -74,5 +75,5 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         }
         x[row] = x[row] / A;
     }
-    for (int i=0; i<4; i++) {dbg(x[i]);}
+    //for (int i=0; i<4; i++) {dbg(x[i]);}
 }

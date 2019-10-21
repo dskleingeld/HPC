@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS = -Wall -Wextra -O3 -g
+CFLAGS = -Wall -Wextra -g #-O3 #Optimisations disabled so debugger gets more info
 
 all: lu
 

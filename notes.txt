@@ -22,3 +22,27 @@ http://lampx.tugraz.at/~hadley/num/ch2/2.3a.php
 
 //forward and back subsitution
 http://www.math.iit.edu/~fass/477577_Chapter_7.pdf
+
+/////////////////////////////
+
+743 745 102658780552132713674661044310239940776122150932279680896598016.000000
+
+vanaf hier ontspoort alles:
+rintse: 
+    row: 62, pivot row: 63, pivot value: 17453046.667308
+    row: 63, pivot row: 64, pivot value: 14863356.338679
+ik: 
+    org row: 62 replaced with: 64 new pivot value: 1.30475e+07
+    org row: 63 replaced with: 63 new pivot value: -1.74253e+07
+
+vragen:
+    waarom word rij 64 gepakt ivp 63
+        -> ?? 
+            check de waarde van 63 via een watchpoint
+            addr lu[63,62] = 1086
+            value at the time of 62 partial pivot is strange (=4960184.6796504986)
+            watchpoint on lu[63,62] -> never comes close to 17453046           
+            check add row algo
+
+    waarom heeft rij 63 een afwijkende waarde? 
+        -> omdat rij 62 nu anders is en er dus een andere waard van a[63,63] is afgetrokken
