@@ -54,11 +54,6 @@ struct PermutationMatrix {
 
 struct DenseIndexedRow {
   double values[MAX_N_COLLUMNS] = {0};
-  int used_col_ind[2*MAX_N_COLLUMNS];
-  int init_columns = 0;
-  int added_columns = 0;
-
-  int make_sorted_col_ind(int sorted_col_ind[]);
 };
 
 void init_array(double array[], const int len, const double pattern[]);

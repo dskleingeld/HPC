@@ -90,7 +90,7 @@ main(int argc, char **argv)
   clock_gettime(CLOCK_REALTIME, &end_time);
 
   //std::cout<<"nonzeros after:"<<std::endl;
-  //dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
+  dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
 
   solve_system(a, p, b, c);
   //check if any elements are wrong
