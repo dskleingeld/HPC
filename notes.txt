@@ -46,3 +46,7 @@ vragen:
 
     waarom heeft rij 63 een afwijkende waarde? 
         -> omdat rij 62 nu anders is en er dus een andere waard van a[63,63] is afgetrokken
+
+/////////////////////////////////////////////////////
+
+    gaat mis vanaf rij 70 nu, andere waarde nml

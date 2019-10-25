@@ -52,11 +52,8 @@ main(int argc, char **argv)
   ok = load_matrix_market(argv[1], MAX_N_ELEMENTS, MAX_N_ROWS,
                           nnz, a.n_rows, n_cols,
                           a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
-  for(int i=0; i<MAX_N_COLLUMNS; i++){
-    a.row_ptr_reserved[i] = a.row_ptr_end[i];
-  }
-  a.free = a.n_rows;
-  a.old_space_end = MAX_N_ELEMENTS;
+  a.init_memory_management();
+
 
   if (!ok){
     fprintf(stderr, "failed to load matrix.\n");
@@ -93,7 +90,7 @@ main(int argc, char **argv)
   clock_gettime(CLOCK_REALTIME, &end_time);
 
   //std::cout<<"nonzeros after:"<<std::endl;
-  dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
+  //dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
 
   solve_system(a, p, b, c);
   //check if any elements are wrong
@@ -102,8 +99,8 @@ main(int argc, char **argv)
     if (abs(c[i]-solution_vector[i])>0.001){
       errors = true;
       /*std::cerr<<"INVALID SOLUTION"
-               <<" \trow: "<<i<<" \tcalculated sol:"
-               <<c[i]<<" \tcorrect sol:"<<solution_vector[i]
+               <<" \t\trow: "<<i<<" \t\tcalculated sol:"
+               <<c[i]<<" \t\tcorrect sol:"<<solution_vector[i]
                <<std::endl;*/
     }
   }

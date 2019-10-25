@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cmath>
 
+#include "libs/dbg/dbg.h"
 #include "matrix.h"
 
 /* Global variables holding the matrix data. To complete this assignment
@@ -14,16 +15,18 @@
  * subscripts. Do not use pointers.
  */
 constexpr double MINIMAL_PIVOT_SIZE = 0.1;
-constexpr int N_TO_OVERALLOCATE = 10;
-constexpr int MAX_N_ELEMENTS = 131072;
+constexpr int N_TO_OVERALLOCATE = 0;//10;
+//constexpr int MAX_N_ELEMENTS = 131072; //Origional
+constexpr int MAX_N_ELEMENTS = 40000000; //40m increased to prevent stop and copy
+
 constexpr int MAX_N_ROWS = 16384;
 constexpr int MAX_N_COLLUMNS = MAX_N_ROWS; //matrices must be square
 
 struct CompressedRowMatrix{
-  double values[MAX_N_ELEMENTS*2] = {-1.};
+  double values[MAX_N_ELEMENTS*2];
   int col_ind[MAX_N_ELEMENTS*2];
-  int free; //must be init to n_rows after loading a matrix
-  int old_space_end; //end of fromspace
+  int free; //points to the first free element in the memory array
+  int old_space_end = MAX_N_ELEMENTS; //end of fromspace
   
   int row_ptr_begin[MAX_N_COLLUMNS]; //opt. move to array of structs to increase data locality
   int row_ptr_end[MAX_N_COLLUMNS]; //inclusive (points to last element)
@@ -32,8 +35,15 @@ struct CompressedRowMatrix{
   int n_rows;
   void swap_rows(const int row, const int replacement_row);
   int n_elements_in_row(const int row_index);
-  void allocate(int numb_elements, int& ptr_begin, int& ptr_end, int& ptr_reserved);
+  void allocate(int numb_elements, int& ptr_begin, int& ptr_reserved);
   void stop_and_copy();
+
+  void init_memory_management(){
+    free = row_ptr_end[n_rows-1]+1;
+    for(int i=0; i<n_rows; i++){
+      row_ptr_reserved[i] = row_ptr_end[i];
+    }
+  }
 };
 
 struct PermutationMatrix {

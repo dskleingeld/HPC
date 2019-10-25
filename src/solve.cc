@@ -1,9 +1,10 @@
 #include "solve.h"
 
+
 //out_vector needs to be all zeros for length n_rows;
 void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]){
   for (int row=0; row<matrix.n_rows; row++){
-    for (int element_in_row=0; element_in_row<matrix.n_elements_in_row(row); element_in_row++){
+    for (int element_in_row=0; element_in_row< (matrix.row_ptr_end[row] - matrix.row_ptr_begin[row]+1); element_in_row++){
       auto flat_index = matrix.row_ptr_begin[row] + element_in_row;
       //auto column = col_ind[flat_index];
       out_vector[row] += matrix.values[flat_index] * in_vector[row];
