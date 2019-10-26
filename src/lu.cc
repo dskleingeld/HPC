@@ -38,14 +38,6 @@ int CompressedRowMatrix::n_elements_in_row(const int row_index){
   return row_ptr_end[row_index] - row_ptr_begin[row_index]+1;
 }
 
-void print_array(const double array[], const size_t length){
-  std::cout<<"array: [";
-  for (size_t i=0; i<length; i++){
-    std::cout<<array[i]<<", ";
-  }
-  std::cout<<"]"<<std::endl;
-}
-
 
 void init_array(double array[], const int len, const double pattern[]){
   for(int i=0; i<len; i++){
@@ -88,7 +80,6 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
     largest_val = 0;
   }
 
-  //dbg(pivot_row);
   //find the row with the best pivot value
   for (int replacement_row=pivot_row+1; replacement_row<lu.n_rows; replacement_row++){
     for (int flat_index = lu.row_ptr_begin[replacement_row]; 
@@ -111,16 +102,15 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
     }
   }
 
-  //if (pivot_row==101){ while(1){;}}
   if(std::isnan(largest_val)){dbg("nan value as pivot");}
-  /*std::cout <<"org row: "<<pivot_row
-            <<" replaced with: "<<best_row
-            <<" new pivot value: "<<largest_val
-            << std::endl;*/
-  //printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
 
   lu.swap_rows(pivot_row, best_row);
   p.mark_swap(pivot_row, best_row);
+
+  if (pivot_row!=best_row){
+    printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
+    dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
+  }
 
   return largest_val;
 }
@@ -214,7 +204,7 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   //+1 as lu.row_ptr_reserved points to the last element still reserved for
   //this row. thus reserved-row is one smaller then the reserved number of elements
   if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < nnz){
-
+    dbg("allocating");
     //allocate more space
     //opt, find way to just extend reserved space if there is free space
     lu.allocate(nnz, lu.row_ptr_begin[row], 
@@ -268,6 +258,7 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   //set the element in the column below the pivot 
   dense_row.values[pivot_column] = mult;
 
+  printf("mult: %f, dense row [%i]: %f %f %f %f\n", mult, other_row, dense_row.values[0], dense_row.values[1], dense_row.values[2], dense_row.values[3]);
   overwrite_sparse_row_with_dense(dense_row, other_row, lu);
 }
 

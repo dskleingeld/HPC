@@ -12,6 +12,21 @@ void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], doub
   }
 }
 
+void get_permuted_vector(const double array[], double pb[], 
+                         int length, PermutationMatrix& p){
+
+    for (int i=0; i<length; i++){
+        pb[i] = array[i];
+    }
+
+    //permute vector b to match up LU vect.
+    for(int row=0; row<length; row++){
+        auto org = pb[row];
+        pb[row] = pb[p.permuted_to_original_index[row]];
+        pb[p.permuted_to_original_index[row]] = org;
+    }
+}
+
 //give na lu factord matrix with permutation matrix and a vector b 
 //solves the system Ax=b
 //
@@ -26,10 +41,8 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
     double pb[MAX_N_ROWS];
     double y[MAX_N_ROWS];
     //permute vector b to match up LU vect.
-    for(int row=0; row<lu.n_rows; row++){
-        pb[row] = org_b[p.permuted_to_original_index[row]];
-        //dbg(p.permuted_to_original_index[row]);
-    }
+    get_permuted_vector(org_b, pb, lu.n_rows, p);
+
 
     //forward subsitution, solves y from Ly=Pb
     for(int row=0; row<lu.n_rows; row++){
@@ -78,3 +91,25 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
     }
     //for (int i=0; i<4; i++) {dbg(x[i]);}
 }
+
+void print_array(const double array[], const size_t length){
+  std::cout<<"array: [";
+  for (size_t i=0; i<length; i++){
+    std::cout<<array[i]<<", ";
+  }
+  std::cout<<"]"<<std::endl;
+}
+
+void print_array(const double array[], const size_t length, PermutationMatrix& p){
+
+    double pb[MAX_N_ROWS];
+    get_permuted_vector(array, pb, length, p);
+
+    std::cout<<"array: [";
+    for (size_t i=0; i<length; i++){
+    std::cout<<pb[i]<<", ";
+    }
+    std::cout<<"]"<<std::endl;
+}
+
+

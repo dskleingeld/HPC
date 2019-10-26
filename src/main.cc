@@ -74,7 +74,6 @@ main(int argc, char **argv)
   matrix_vector_product(a, solution_vector, b);
   //std::cout<<"solution vector: ";
   //print_array(solution_vector, a.n_rows);
-  //print_array(b, a.n_rows);
 
   /* For debugging, can be removed when implementation is finished. */
   //std::cout<<"nonzeros before:"<<std::endl;
@@ -92,16 +91,18 @@ main(int argc, char **argv)
   //std::cout<<"nonzeros after:"<<std::endl;
   dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
 
+  print_array(b, a.n_rows, p);
   solve_system(a, p, b, c);
   //check if any elements are wrong
   bool errors = false;
   for(int i=0; i<a.n_rows; i++){
+    dbg(c[i]);
     if (abs(c[i]-solution_vector[i])>0.001){
       errors = true;
-      /*std::cerr<<"INVALID SOLUTION"
+      std::cerr<<"INVALID SOLUTION"
                <<" \t\trow: "<<i<<" \t\tcalculated sol:"
                <<c[i]<<" \t\tcorrect sol:"<<solution_vector[i]
-               <<std::endl;*/
+               <<std::endl;
     }
   }
   if(errors == false){
