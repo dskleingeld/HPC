@@ -62,8 +62,8 @@ main(int argc, char **argv)
 
   //solution vectors
   double solution_vector[MAX_N_ROWS];
-  double pattern[] = {1., 1.};
-  //double pattern[] = {.1, .1};
+  //double pattern[] = {1., 1.};
+  double pattern[] = {.1, .1};
   //double pattern[] = {1., -1.};
   //double pattern[] = {5.,-5.};
   //double pattern[] = {100.,-100.};
