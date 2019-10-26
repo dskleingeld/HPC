@@ -1,5 +1,4 @@
 #include "lu.h"
-#include "libs/dbg/dbg.h"
 
 //regex to remove debug statements: "[ \t]+dbg\([0-z.\*]+\);\n"
 
@@ -95,14 +94,14 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
         if (std::abs(value) > std::abs(largest_val)){
           largest_val = value;
           best_row = replacement_row;
-          if(value==0){dbg("wtf!");}
+          //if(value==0){dbg("wtf!");}
         }
         break;
       }
     }
   }
 
-  if(std::isnan(largest_val)){dbg("nan value as pivot");}
+  //if(std::isnan(largest_val)){dbg("nan value as pivot");}
 
   lu.swap_rows(pivot_row, best_row);
   p.mark_swap(pivot_row, best_row);
@@ -146,7 +145,7 @@ void move_array(T array[], int source, int destination, int len){
 
 //opt last run of stop and copy should not buffer extra space
 void CompressedRowMatrix::stop_and_copy(){
-  dbg("STOP AND COPY");
+  //dbg("STOP AND COPY");
   //old space at the begin of the array
   if (old_space_end == MAX_N_ELEMENTS){
     free = old_space_end + 1;

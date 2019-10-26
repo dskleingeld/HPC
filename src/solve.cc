@@ -1,6 +1,5 @@
 #include "solve.h"
 
-
 //out_vector needs to be all zeros for length n_rows;
 void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], double out_vector[]){
   for (int row=0; row<matrix.n_rows; row++){

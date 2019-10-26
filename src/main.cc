@@ -62,11 +62,11 @@ main(int argc, char **argv)
 
   //solution vectors
   double solution_vector[MAX_N_ROWS];
-  double pattern[] = {1., 1.};
+  //double pattern[] = {1., 1.};
   //double pattern[] = {.1, .1};
   //double pattern[] = {1., -1.};
   //double pattern[] = {5.,-5.};
-  //double pattern[] = {100.,-100.};
+  double pattern[] = {100.,-100.};
   init_array(solution_vector, a.n_rows, pattern);
 
   double b[MAX_N_ROWS];
@@ -97,7 +97,7 @@ main(int argc, char **argv)
   bool errors = false;
   for(int i=0; i<a.n_rows; i++){
     //dbg(c[i]);
-    if (abs(c[i]-solution_vector[i])>0.001){
+    if (abs(c[i]-solution_vector[i])>0.1){
       errors = true;
       std::cerr<<"INVALID SOLUTION"
                <<" \t\trow: "<<i<<" \t\tcalculated sol:"

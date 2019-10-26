@@ -2,7 +2,6 @@
 #define SOLVE_H
 
 #include "lu.h"
-#include "libs/dbg/dbg.h"
 
 bool find_column(CompressedRowMatrix& m, int haystack_row, 
                  int needle_column, int& flat_index);
