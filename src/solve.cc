@@ -79,6 +79,11 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
             }
         }
         double A;
+        if (find_column(lu,row,row,flat_idx)){
+          A = lu.values[flat_idx];
+        } else {
+          A = 1.; 
+        }
         x[row] = x[row] / A;
     }
 }
