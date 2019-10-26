@@ -1,5 +1,4 @@
 #include "lu.h"
-#include "libs/dbg/dbg.h"
 
 //regex to remove debug statements: "[ \t]+dbg\([0-z.\*]+\);\n"
 
@@ -36,14 +35,6 @@ void CompressedRowMatrix::swap_rows(const int row, const int replacement_row){
 
 int CompressedRowMatrix::n_elements_in_row(const int row_index){
   return row_ptr_end[row_index] - row_ptr_begin[row_index]+1;
-}
-
-void print_array(const double array[], const size_t length){
-  std::cout<<"array: [";
-  for (size_t i=0; i<length; i++){
-    std::cout<<array[i]<<", ";
-  }
-  std::cout<<"]"<<std::endl;
 }
 
 
@@ -88,7 +79,6 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
     largest_val = 0;
   }
 
-  //dbg(pivot_row);
   //find the row with the best pivot value
   for (int replacement_row=pivot_row+1; replacement_row<lu.n_rows; replacement_row++){
     for (int flat_index = lu.row_ptr_begin[replacement_row]; 
@@ -104,23 +94,25 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
         if (std::abs(value) > std::abs(largest_val)){
           largest_val = value;
           best_row = replacement_row;
-          if(value==0){dbg("wtf!");}
+          //if(value==0){dbg("wtf!");}
         }
         break;
       }
     }
   }
 
-  //if (pivot_row==101){ while(1){;}}
-  if(std::isnan(largest_val)){dbg("nan value as pivot");}
-  /*std::cout <<"org row: "<<pivot_row
-            <<" replaced with: "<<best_row
-            <<" new pivot value: "<<largest_val
-            << std::endl;*/
-  //printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
+  //if(std::isnan(largest_val)){dbg("nan value as pivot");}
 
   lu.swap_rows(pivot_row, best_row);
   p.mark_swap(pivot_row, best_row);
+
+  //printf("Row: %d, pivot row: %d\n", pivot_row, best_row);
+
+
+  if (pivot_row!=best_row){
+    //printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
+    //dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
+  }
 
   return largest_val;
 }
@@ -153,7 +145,7 @@ void move_array(T array[], int source, int destination, int len){
 
 //opt last run of stop and copy should not buffer extra space
 void CompressedRowMatrix::stop_and_copy(){
-  dbg("STOP AND COPY");
+  //dbg("STOP AND COPY");
   //old space at the begin of the array
   if (old_space_end == MAX_N_ELEMENTS){
     free = old_space_end + 1;
@@ -199,66 +191,33 @@ void CompressedRowMatrix::allocate(int numb_elements, int& ptr_begin,
   free+=numb_elements +N_TO_OVERALLOCATE+1;
 }
 
-int DenseIndexedRow::make_sorted_col_ind(int sorted_col_ind[]){
-  int k=0, i=0, j=init_columns;
-
-  while(i<init_columns && j<init_columns+added_columns){
-    if(used_col_ind[i] < used_col_ind[j]){
-      sorted_col_ind[k] = used_col_ind[i];
-      i++; k++;
-    } else if (used_col_ind[i] == used_col_ind[j]) {
-      sorted_col_ind[k] = used_col_ind[i];
-      i++; j++; k++;
-    } else {
-      sorted_col_ind[k] = used_col_ind[j];
-      j++; k++;
-    }
-  }
-  //if not done with i, copy from the i area 
-  //in used_col_ind to the sorted array
-  for(;i<init_columns; i++, k++){
-    sorted_col_ind[k] = used_col_ind[i];
-  } 
-  //if not done with j, copy from the j area 
-  //in used_col_ind to the sorted array
-  for(;j<init_columns+added_columns; j++, k++){
-    sorted_col_ind[k] = used_col_ind[j];
-  }
-  
-  return k;
-}
-
 //geather
 void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row, 
-                                     int row, CompressedRowMatrix& lu,
-                                     int dense_row_offset){
+                                     int row, CompressedRowMatrix& lu){
 
-  static int sorted_col_ind[MAX_N_COLLUMNS];
-  auto numb_elements = dense_row.make_sorted_col_ind(sorted_col_ind);
+  //count number of non zeros
+  int nnz = 0;
+  for(int i=0; i<lu.n_rows; i++){
+    if (dense_row.values[i] != 0.0){
+      nnz++;
+    }
+  }
 
   //+1 as lu.row_ptr_reserved points to the last element still reserved for
   //this row. thus reserved-row is one smaller then the reserved number of elements
-  if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < numb_elements){
-
+  if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < nnz){
+    //dbg("allocating");
     //allocate more space
     //opt, find way to just extend reserved space if there is free space
-    lu.allocate(numb_elements, lu.row_ptr_begin[row], 
+    lu.allocate(nnz, lu.row_ptr_begin[row], 
                 lu.row_ptr_reserved[row]);
 
-    //copy values not in dense_row
-    auto old_begin = lu.row_ptr_begin[row];
-    for(int old_idx=old_begin, new_idx=lu.row_ptr_begin[row]; //opt copy less (need only everything in front of pivot)
-        old_idx<=lu.row_ptr_end[row]; old_idx++, new_idx++){
-      
-      lu.values[new_idx] = lu.values[old_idx];
-      lu.col_ind[new_idx] = lu.col_ind[old_idx];
-    }
+    //copy values not in dense_row not needed as dense row now contains everything
   }
 
   //geather into sparse row
-  auto flat_index = lu.row_ptr_begin[row]+dense_row_offset;
-  for(int i=0; i<numb_elements; i++){
-    auto column = sorted_col_ind[i];
+  auto flat_index = lu.row_ptr_begin[row];
+  for(int column=0; column<lu.n_rows; column++){
     auto value = dense_row.values[column];
     if (value==0){ //skip zero values
       continue;
@@ -281,35 +240,28 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   bool found = find_column(lu, other_row, pivot_column, pivot_column_in_other_row);
   if (!found){return;} // no pivot in this column => we are done 
 
-  //set the element in the column below the pivot 
-  auto mult = lu.values[pivot_column_in_other_row]/pivot;
-
   DenseIndexedRow dense_row; //opt make static, and reset each run
-  dense_row.values[pivot_column] = mult;
-  dense_row.used_col_ind[0] = pivot_column;
-  dense_row.init_columns=1;
 
   //scatter elements after mult of other_row to a temp row in dense form
-  for(int k=pivot_column_in_other_row+1; k<=lu.row_ptr_end[other_row]; k++){
+  for(int k=lu.row_ptr_begin[other_row]; k<=lu.row_ptr_end[other_row]; k++){
     auto value = lu.values[k]; 
     auto column = lu.col_ind[k];
     dense_row.values[column] = value;
-    dense_row.used_col_ind[dense_row.init_columns] = column;
-    dense_row.init_columns++;
   }
   
+  auto mult = lu.values[pivot_column_in_other_row]/pivot;
   //add scaled pivot_row to scatterd other row in dense form
   for(int k=lu.row_ptr_begin[pivot_row]+1; k<=lu.row_ptr_end[pivot_row]; k++){
     auto column = lu.col_ind[k];
-      if (column > pivot_column){ //TODO is this check needed?
-        dense_row.values[column] -= mult*lu.values[k];
-        dense_row.used_col_ind[dense_row.init_columns+dense_row.added_columns] = column;
-        dense_row.added_columns++;
+    if (column > pivot_column){ //TODO is this check needed?
+      dense_row.values[column] -= mult*lu.values[k];
     }
   }
+  //set the element in the column below the pivot 
+  dense_row.values[pivot_column] = mult;
 
-  int dense_row_offset = pivot_column_in_other_row - lu.row_ptr_begin[other_row];
-  overwrite_sparse_row_with_dense(dense_row, other_row, lu, dense_row_offset);
+  //printf("mult: %f, dense row [%i]: %f %f %f %f\n", mult, other_row, dense_row.values[0], dense_row.values[1], dense_row.values[2], dense_row.values[3]);
+  overwrite_sparse_row_with_dense(dense_row, other_row, lu);
 }
 
 //using the opposites of the multiplies used in the 

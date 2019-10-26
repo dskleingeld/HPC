@@ -7,7 +7,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "libs/dbg/dbg.h"
+//#include "libs/dbg/dbg.h"
 #include "matrix.h"
 
 /* Global variables holding the matrix data. To complete this assignment
@@ -17,7 +17,9 @@
 constexpr double MINIMAL_PIVOT_SIZE = 0.1;
 constexpr int N_TO_OVERALLOCATE = 0;//10;
 //constexpr int MAX_N_ELEMENTS = 131072; //Origional
-constexpr int MAX_N_ELEMENTS = 40000000; //40m increased to prevent stop and copy
+constexpr int MAX_N_ELEMENTS = 4000000; //4m increased to prevent stop and copy
+//constexpr int MAX_N_ELEMENTS = 400000000; //400m increased to prevent stop and copy
+                            // 116079076; nopoly size
 
 constexpr int MAX_N_ROWS = 16384;
 constexpr int MAX_N_COLLUMNS = MAX_N_ROWS; //matrices must be square
@@ -54,11 +56,6 @@ struct PermutationMatrix {
 
 struct DenseIndexedRow {
   double values[MAX_N_COLLUMNS] = {0};
-  int used_col_ind[2*MAX_N_COLLUMNS];
-  int init_columns = 0;
-  int added_columns = 0;
-
-  int make_sorted_col_ind(int sorted_col_ind[]);
 };
 
 void init_array(double array[], const int len, const double pattern[]);
