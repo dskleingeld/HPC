@@ -64,8 +64,6 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         }
     }
 
-    //for (int i=0; i<4; i++) {dbg(y[i]);}   
-
     //back subsitution, solves x from Ux=y
     for(int row = lu.n_rows-1; row>=0; row--){
         x[row] = y[row];
@@ -89,7 +87,6 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         }
         x[row] = x[row] / A;
     }
-    //for (int i=0; i<4; i++) {dbg(x[i]);}
 }
 
 void print_array(const double array[], const size_t length){

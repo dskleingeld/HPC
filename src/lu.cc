@@ -107,9 +107,12 @@ double partial_pivot(PermutationMatrix& p, CompressedRowMatrix& lu, int pivot_ro
   lu.swap_rows(pivot_row, best_row);
   p.mark_swap(pivot_row, best_row);
 
+  //printf("Row: %d, pivot row: %d\n", pivot_row, best_row);
+
+
   if (pivot_row!=best_row){
-    printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
-    dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
+    //printf("row: %d, pivot row: %d, pivot value: %f\n", pivot_row, best_row, largest_val);
+    //dump_nonzeros(lu.n_rows, lu.values, lu.col_ind, lu.row_ptr_begin, lu.row_ptr_end);
   }
 
   return largest_val;
@@ -204,7 +207,7 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   //+1 as lu.row_ptr_reserved points to the last element still reserved for
   //this row. thus reserved-row is one smaller then the reserved number of elements
   if(lu.row_ptr_reserved[row] - lu.row_ptr_begin[row] +1 < nnz){
-    dbg("allocating");
+    //dbg("allocating");
     //allocate more space
     //opt, find way to just extend reserved space if there is free space
     lu.allocate(nnz, lu.row_ptr_begin[row], 
@@ -258,7 +261,7 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
   //set the element in the column below the pivot 
   dense_row.values[pivot_column] = mult;
 
-  printf("mult: %f, dense row [%i]: %f %f %f %f\n", mult, other_row, dense_row.values[0], dense_row.values[1], dense_row.values[2], dense_row.values[3]);
+  //printf("mult: %f, dense row [%i]: %f %f %f %f\n", mult, other_row, dense_row.values[0], dense_row.values[1], dense_row.values[2], dense_row.values[3]);
   overwrite_sparse_row_with_dense(dense_row, other_row, lu);
 }
 
