@@ -13,17 +13,24 @@ void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], doub
 
 void get_permuted_vector(const double array[], double pb[], 
                          int length, PermutationMatrix& p){
+  //copy the array into pb
+  for (int i=0; i<length; i++){pb[i] = array[i];}
 
-    for (int i=0; i<length; i++){
-        pb[i] = array[i];
-    }
+  //create index from permutationMatrix
+  int index[MAX_N_ROWS];
+  for(int i=0; i<length; i++){index[i]=i;}
 
-    //permute vector b to match up LU vect.
-    for(int row=0; row<length; row++){
-        auto org = pb[row];
-        pb[row] = pb[p.permuted_to_original_index[row]];
-        pb[p.permuted_to_original_index[row]] = org;
-    }
+  for(int i=0; i<length; i++){
+    auto v = p.permuted_to_original_index[i];
+    auto temp = index[i];
+    index[i] = index[v];
+    index[v] = temp;
+  }
+
+  //permute vector b to match up LU vect.
+  for(int i=0; i<length; i++){
+    pb[index[i]] = array[i];
+  }
 }
 
 //give na lu factord matrix with permutation matrix and a vector b 
@@ -38,14 +45,13 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
                   double org_b[], double x[]){
 
     double pb[MAX_N_ROWS];
-    double y[MAX_N_ROWS];
+    double c[MAX_N_ROWS];
     //permute vector b to match up LU vect.
     get_permuted_vector(org_b, pb, lu.n_rows, p);
 
-
     //forward subsitution, solves y from Ly=Pb
     for(int row=0; row<lu.n_rows; row++){
-        y[row] = pb[row];
+        c[row] = pb[row];
 
         //iterate over all columns of A
         //if A[] is zero nothing happens to c =>
@@ -59,39 +65,56 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
             if(column>row-1){break;}
 
             auto A = lu.values[flat_idx];
-            y[row] -= A * y[column];
+            c[row] -= A * c[column];
         }
     }
 
     //back subsitution, solves x from Ux=y
     for(int row = lu.n_rows-1; row>=0; row--){
-        x[row] = y[row];
+        x[row] = c[row];
         //iterate over all columns of A
         //if A[] is zero nothing happens to c =>
         //we only need to iterate the nonzero elements
         //for(int column=row+1; column<row; column++){
-        int flat_idx;
-        if (find_column(lu, row, row+1, flat_idx)){
-            for(;flat_idx<=lu.row_ptr_end[row]; flat_idx++){
-                auto A = lu.values[flat_idx];
-                auto column = lu.col_ind[flat_idx];
-                x[row] -= A * x[column];
-            }
+        
+        //find first non zero element in row of A starting at column row+1
+        for (int flat_idx=lu.row_ptr_begin[row]; flat_idx<lu.row_ptr_end[row]; flat_idx++){
+          //only truely start iterating over columns once we are past column row+1
+          if (lu.col_ind[flat_idx]<row+1){ continue; }
+
+          auto A = lu.values[flat_idx];
+          auto column = lu.col_ind[flat_idx];
+          x[row] -= A * x[column];
         }
         double A;
+        int flat_idx;
         if (find_column(lu,row,row,flat_idx)){
           A = lu.values[flat_idx];
         } else {
+          dbg(row);
           A = 1.; 
         }
         x[row] = x[row] / A;
     }
 }
 
-void print_array(const double array[], const size_t length){
-  std::cout<<"array: [";
-  for (size_t i=0; i<length; i++){
-    std::cout<<array[i]<<", ";
+void print_perm(PermutationMatrix& p, const size_t length){
+  std::cout<<"[ ";
+  for(size_t i = 0; i<length; i++){
+    printf(" %d",p.permuted_to_original_index[i]);
+  }
+  std::cout<<"]"<<std::endl;
+}
+
+void print_array(const double a[], const size_t length){
+  std::cout<<"[ ";
+  size_t i = 0;
+  for (; i<length-4; i+=4){
+    printf(" %.8e %.8e %.8e %.8e\n", a[i], a[i+1], a[i+2], a[i+3]);
+  }
+  std::cout<<" ";
+  for (; i<length; i++){
+    printf("%.8e", a[i]);
   }
   std::cout<<"]"<<std::endl;
 }
@@ -101,9 +124,14 @@ void print_array(const double array[], const size_t length, PermutationMatrix& p
     double pb[MAX_N_ROWS];
     get_permuted_vector(array, pb, length, p);
 
-    std::cout<<"array: [";
-    for (size_t i=0; i<length; i++){
-    std::cout<<pb[i]<<", ";
+    std::cout<<"[ ";
+    size_t i = 0;
+    for (; i<length-4; i+=4){
+      printf(" %.8e %.8e %.8e %.8e\n", pb[i], pb[i+1], pb[i+2], pb[i+3]);
+    }
+    std::cout<<" ";
+    for (; i<length; i++){
+      printf("%.8e", pb[i]);
     }
     std::cout<<"]"<<std::endl;
 }
