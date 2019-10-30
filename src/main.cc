@@ -62,10 +62,10 @@ main(int argc, char **argv)
 
   //solution vectors
   double solution_vector[MAX_N_ROWS];
-  double pattern[] = {1., 1.};
+  //double pattern[] = {1., 1.};
   //double pattern[] = {.1, .1};
   //double pattern[] = {1., -1.};
-  //double pattern[] = {5.,-5.};
+  double pattern[] = {5.,-5.};
   //double pattern[] = {100.,-100.};
   init_array(solution_vector, a.n_rows, pattern);
 
@@ -73,7 +73,8 @@ main(int argc, char **argv)
   double c[MAX_N_ROWS];
   matrix_vector_product(a, solution_vector, b);
   //std::cout<<"solution vector: ";
-  //print_array(b, a.n_rows);
+  //print_array(solution_vector, a.n_rows);
+  print_array(b, a.n_rows);
 
   /* For debugging, can be removed when implementation is finished. */
   //std::cout<<"nonzeros before:"<<std::endl;
@@ -98,10 +99,10 @@ main(int argc, char **argv)
   for(int i=0; i<a.n_rows; i++){
     if (abs(c[i]-solution_vector[i])>0.1 || !std::isfinite(c[i])){
       errors = true;
-      std::cerr<<"INVALID SOLUTION"
+      /*std::cerr<<"INVALID SOLUTION"
                <<" \t\trow: "<<i<<" \t\tcalculated sol:"
                <<c[i]<<" \t\tcorrect sol:"<<solution_vector[i]
-               <<std::endl;
+               <<std::endl;*/
     }
   }
   if(errors == false){
