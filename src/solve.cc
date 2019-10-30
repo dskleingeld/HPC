@@ -50,35 +50,8 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
   //permute vector b to match up LU vect.
   get_permuted_vector(org_b, pb, lu.n_rows, p);
 
-  double temp, temp2;
-  for(int i = 0; i < lu.n_rows; i++){
-    temp = 0;
-    for(int j = lu.row_ptr_begin[i]; j < lu.row_ptr_end[i]; j++){
-      if(lu.col_ind[j] < i) temp += lu.values[j]*c[lu.col_ind[j]];
-      else break;
-    }
-    c[i] = pb[i] - temp;
-  }
-
-  for(int i = lu.n_rows-1; i >= 0; i--){
-    temp = 0;
-    temp2 = 0;
-    for(int j = lu.row_ptr_end[i]; j >= lu.row_ptr_begin[i]; j--){
-      if(lu.col_ind[j] == i) {
-        temp2 = lu.values[j];
-        break;
-      }
-      else if(lu.col_ind[j] > i)
-        temp += x[lu.col_ind[j]]*lu.values[j];
-      else break;
-    }
-    x[i] = (c[i] - temp) / temp2;
-  }
-
-
-
     //forward subsitution, solves y from Ly=Pb
-    /*for(int row=0; row<lu.n_rows; row++){
+    for(int row=0; row<lu.n_rows; row++){
         c[row] = pb[row];
 
         //iterate over all columns of A
@@ -106,7 +79,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
         //for(int column=row+1; column<row; column++){
         
         //find first non zero element in row of A starting at column row+1
-        for (int flat_idx=lu.row_ptr_begin[row]; flat_idx<lu.row_ptr_end[row]; flat_idx++){
+        for (int flat_idx=lu.row_ptr_begin[row]; flat_idx<=lu.row_ptr_end[row]; flat_idx++){
           //only truely start iterating over columns once we are past column row+1
           if (lu.col_ind[flat_idx]<row+1){ continue; }
 
@@ -123,7 +96,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
           A = 1.; 
         }
         x[row] = x[row] / A;
-    }*/
+    }
 }
 
 void print_perm(PermutationMatrix& p, const size_t length){
