@@ -90,7 +90,7 @@ main(int argc, char **argv)
 
   //std::cout<<"nonzeros after:"<<std::endl;
   //dump_nonzeros(a.n_rows, a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
-  print_array(b, a.n_rows, p);
+  //print_array(b, a.n_rows, p);
   //print_perm(p, a.n_rows);
   solve_system(a, p, b, c);
   //check if any elements are wrong
@@ -98,10 +98,10 @@ main(int argc, char **argv)
   for(int i=0; i<a.n_rows; i++){
     if (abs(c[i]-solution_vector[i])>0.1 || !std::isfinite(c[i])){
       errors = true;
-      /*std::cerr<<"INVALID SOLUTION"
+      std::cerr<<"INVALID SOLUTION"
                <<" \t\trow: "<<i<<" \t\tcalculated sol:"
                <<c[i]<<" \t\tcorrect sol:"<<solution_vector[i]
-               <<std::endl;*/
+               <<std::endl;
     }
   }
   if(errors == false){

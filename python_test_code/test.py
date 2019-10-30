@@ -65,7 +65,7 @@ for ba, bb in zip(b_p,b2):
 
 print(error)
 #print(p[:20])
-#print(b2[:20])
+print(b2)
 #print(b_p[:20])
 
 

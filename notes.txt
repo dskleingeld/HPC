@@ -50,3 +50,8 @@ vragen:
 /////////////////////////////////////////////////////
 
     gaat mis vanaf rij 70 nu, andere waarde nml
+
+
+///////////////////////////////////////////////////////
+
+https://math.stackexchange.com/questions/461149/lu-factorization-with-pivot-to-solve-linear-system
