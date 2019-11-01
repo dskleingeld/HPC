@@ -148,7 +148,7 @@ void CompressedRowMatrix::stop_and_copy(){
   //dbg("STOP AND COPY");
 
   if (old_space_end == MAX_N_ELEMENTS){   //old space is the begin of the array
-    free = old_space_end + 1;//next free element one at the begin of the second half of the array
+    free = MAX_N_ELEMENTS + 1;//next free element one at the begin of the second half of the array
     old_space_end = 2*MAX_N_ELEMENTS;
   } else { //old space at the end of the array
     free = 0;//next free element at begin of array
@@ -182,11 +182,11 @@ void CompressedRowMatrix::allocate(int numb_elements, int& ptr_begin,
 
   if(free>old_space_end){//in new space
     if(free+numb_elements+N_TO_OVERALLOCATE > MAX_N_ELEMENTS*2){
-      //stop_and_copy();
+      stop_and_copy();
     }
   } else {//in old space
     if(free+numb_elements+N_TO_OVERALLOCATE > MAX_N_ELEMENTS){
-      //stop_and_copy();
+      stop_and_copy();
     }
   }
 
@@ -223,13 +223,11 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   auto flat_index = lu.row_ptr_begin[row];
   for(int column=0; column<lu.n_rows; column++){
     auto value = dense_row.values[column];
-    if (value==0){ //skip zero values
-      continue;
+    if (value!=0.0){ //skip zero values
+      lu.values[flat_index] = value;
+      lu.col_ind[flat_index] = column;
+      flat_index++;
     }
-
-    lu.values[flat_index] = value;
-    lu.col_ind[flat_index] = column;
-    flat_index++;
   }
   //update row ptr in case row shrunk
   lu.row_ptr_end[row] = flat_index-1;

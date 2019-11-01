@@ -17,7 +17,8 @@
 constexpr double MINIMAL_PIVOT_SIZE = 0.1;
 constexpr int N_TO_OVERALLOCATE = 0;//10;
 //constexpr int MAX_N_ELEMENTS = 131072; //Origional
-constexpr int MAX_N_ELEMENTS = 4000000; //4m increased to prevent stop and copy
+constexpr int MAX_N_ELEMENTS = 1 << 25; //
+//constexpr int MAX_N_ELEMENTS = 4000000; //4m increased to prevent stop and copy
 //constexpr int MAX_N_ELEMENTS = 400000000; //400m increased to prevent stop and copy
                             // 116079076; nopoly size
 

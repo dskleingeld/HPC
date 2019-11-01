@@ -124,10 +124,10 @@ main(int argc, char **argv)
       normed_actual_solution += std::pow(x[j], 2.0);
       if (std::sqrt(normed_error_size)>0.1 || !std::isfinite(x[j])){
         any_error = true;
-        std::cerr<<"INVALID SOLUTION"
+        /*std::cerr<<"INVALID SOLUTION"
                 <<" \t\trow: "<<j<<" \t\tcalculated sol:"
                 <<x[i]<<" \t\tcorrect sol:"<<+solution_vector[i]
-                <<std::endl;
+                <<std::endl;*/
       }
     }
     relative_error[i] = std::sqrt(normed_error_size)/std::sqrt(normed_actual_solution);
@@ -136,13 +136,11 @@ main(int argc, char **argv)
 
   for(int i=0; i<5; i++){
     if(any_error){
-      if(relative_error[i] > 1.0){
-        std::cout<<"ERROR ENCOUNTERD IN PATTERN: "<<i<<std::endl;
-      }
-    } else {
-      fprintf(stderr, "pattern %d: %fs, relative error: %f\n", 
-              i, elapsed_times[i], relative_error[i]);
-    }
+      std::cout<<"ERROR ENCOUNTERD"<<std::endl;
+    } 
+    fprintf(stderr, "pattern %d: %fs, relative error: %f\n", 
+            i, elapsed_times[i], relative_error[i]);
+
   }
 
   return 0;
