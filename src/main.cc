@@ -124,10 +124,10 @@ main(int argc, char **argv)
       normed_actual_solution += std::pow(x[j], 2.0);
       if (std::sqrt(normed_error_size)>0.1 || !std::isfinite(x[j])){
         any_error = true;
-        /*std::cerr<<"INVALID SOLUTION"
+        std::cerr<<"INVALID SOLUTION"
                 <<" \t\trow: "<<j<<" \t\tcalculated sol:"
-                <<x[i]<<" \t\tcorrect sol:"<<solution_vector[i]
-                <<std::endl;*/
+                <<x[i]<<" \t\tcorrect sol:"<<+solution_vector[i]
+                <<std::endl;
       }
     }
     relative_error[i] = std::sqrt(normed_error_size)/std::sqrt(normed_actual_solution);

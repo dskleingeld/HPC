@@ -146,19 +146,19 @@ void move_array(T array[], int source, int destination, int len){
 //opt last run of stop and copy should not buffer extra space
 void CompressedRowMatrix::stop_and_copy(){
   //dbg("STOP AND COPY");
-  //old space at the begin of the array
-  if (old_space_end == MAX_N_ELEMENTS){
-    free = old_space_end + 1;
+
+  if (old_space_end == MAX_N_ELEMENTS){   //old space is the begin of the array
+    free = old_space_end + 1;//next free element one at the begin of the second half of the array
     old_space_end = 2*MAX_N_ELEMENTS;
   } else { //old space at the end of the array
-    free = 0;
+    free = 0;//next free element at begin of array
     old_space_end = MAX_N_ELEMENTS;
   }
 
   for(int row=0; row<n_rows; row++){
     //move row
     
-    int new_idx = free;
+    int new_idx = free;//move all data
     for(int old_idx=row_ptr_begin[row];
             old_idx<=row_ptr_end[row];  
             old_idx++){
@@ -167,12 +167,11 @@ void CompressedRowMatrix::stop_and_copy(){
       col_ind[new_idx] = col_ind[old_idx];
       new_idx++;
     }
-    
-    
+
     //set pointers right
     row_ptr_begin[row] = free;
     row_ptr_end[row] = new_idx-1;
-    row_ptr_reserved[row] = new_idx-1 + N_TO_OVERALLOCATE; 
+    row_ptr_reserved[row] = row_ptr_end[row] + N_TO_OVERALLOCATE; 
 
     free = row_ptr_reserved[row]+1;
   }
@@ -181,14 +180,19 @@ void CompressedRowMatrix::stop_and_copy(){
 void CompressedRowMatrix::allocate(int numb_elements, int& ptr_begin, 
                                    int& ptr_reserved){
 
-  if(old_space_end-free<(numb_elements+N_TO_OVERALLOCATE)){
-    //do stop and copy to compact
-    //stop_and_copy(); //TODO re-enable for larger matrices 
+  if(free>old_space_end){//in new space
+    if(free+numb_elements+N_TO_OVERALLOCATE > MAX_N_ELEMENTS*2){
+      //stop_and_copy();
+    }
+  } else {//in old space
+    if(free+numb_elements+N_TO_OVERALLOCATE > MAX_N_ELEMENTS){
+      //stop_and_copy();
+    }
   }
 
   ptr_begin = free;
-  ptr_reserved = free + numb_elements +N_TO_OVERALLOCATE;
-  free+=numb_elements +N_TO_OVERALLOCATE+1;
+  ptr_reserved = free + numb_elements + N_TO_OVERALLOCATE;
+  free+=numb_elements + N_TO_OVERALLOCATE;
 }
 
 //geather
