@@ -35,7 +35,7 @@
 %\usepackage[setpagesize=false,colorlinks=true,linkcolor=red,urlcolor=blue,pdftitle={Het grote probleem},pdfauthor={David Kleingeld}]{hyperref}
 
 \author{David Kleingeld, s1432982}
-\title{}
+\title{Lu factoring Sparse matrices}
 
 \begin{document}
 
@@ -44,21 +44,21 @@
 \maketitle
 
 \section{Introduction}
-Many problems in science depend on solving linear systems. To speed up computations they depend on LU factorization. This can be viewed as a matrix form of Gaussian elimination. LU factorization was introduced by polish mathematician Tadeusz Banachiewicz \cite{lu}.
-Often these matrices are extremely large while containing few non zero entries, so called sparse matrices. The LU factorization can be sped up by skipping these entries. There are a number of schemes to store only non zero entries for sparse matrices. The simplest, Dictionary of keys, stores the value row and column for each non zero entry. Here we have implemented a Sparse LU Factorization kernel using compressed row storage. With compressed row storage only the non zero entries in each rows are stored. The order of the entries is preserved and for each entry the column is kept with it \cite{compressedRowStorage}. We discuss the implementation, how we validated it, how we benchmark, the results followed by a discussion of these where we also point out possible improvements. 
+Many problems in science depend on solving linear systems. To speed this up LU factorization is used. It can be viewed as a matrix form of Gaussian elimination. LU factorization was introduced by polish mathematician Tadeusz Banachiewicz \cite{lu}.
+Often these matrices are extremely large while containing few non zero entries, so called sparse matrices. The LU factorization can be sped up by skipping these entries. There are a number of schemes to store only non zero entries for sparse matrices. The simplest, Dictionary of keys, stores the value, row and column for each non zero entry. Here we have implemented a Sparse LU Factorization kernel using compressed row storage. With compressed row storage the non zero entries in each rows are stored after each other and while we keep track of their column \cite{compressedRowStorage}. We begin with the implementation, how we validated it, how we benchmark, the results and finally we end with a discussion of the validation and benchmark where we also point out possible improvements. 
 
 \section{Implementation}
 
-During Lu factoring we traverse the columns of the matrix, for each column we designate a pivot, the element on the diagonal in that column. We add the row with this pivot to the rows below it scaled such that the elements below the pivot become zero. This will be problematic when the pivot value is small while the values below it are large. Then the rows will be scaled by a very large factor. Future pivot values will now have extremer values reducing numerical precision. 
-We can mitigate most of this using partial pivoting. Here for each pivot we check if there is a row with a larger value in the column below the current pivot. If there is we exchange rows so the larger value is now the current pivot. This way we mostly do not scale by large factors. We keep a list of applied row interchanges, using it we can still solve the system.
+During Lu factoring we traverse the columns of the matrix, for each column we designate the element on the diagonal in that column the pivot. We add the row with this pivot to the rows below it scaled such that the elements below the pivot become zero. This is problematic when the pivot value is small. Then the rows below might be scaled by a very large factor. Future pivot will now have extremer values reducing numerical precision. 
+We can mitigate most of this using partial pivoting. For each pivot we check if there is a row with a larger value in the column below it. If there is we exchange rows so the larger value is now the current pivot. This way avoid scaling by large factors most of the time. We keep a list of applied row interchanges, using it we can still solve the original system.
 
-Another difficulty is the actual adding of two rows. This being key to the algorithm it happens often. When we add two sparse rows more non zero elements can appear in the resulting row. However as we keep changing elements below pivots to zero non zero values will also disappear. We store the compressed rows after one another, thus expanding is not an option. Instead, when a row needs to expand we move after the last row. This creates gaps in between compressed rows reducing data locality which reduces performance and increasing the required memory to store the rows. The solution is to every once in a while move all rows to a new memory space. Here we put them against eachother again.
+Another difficulty is actually adding two rows. As this is the key to the algorithm this happens often. When we add two sparse rows more non zero elements can appear in the resulting row. However at the same time we change elements below pivots to zero, thus non zero values will also disappear. We store the compressed rows after one another, thus expanding is not an option. Instead, when a row needs to expand we move it after the last row. This creates gaps in between compressed rows reducing data locality which reduces performance and increasing the memory needed. We solve this by moving all rows to a new memory space every once in a while. Then they are next to each other again.
 
 \section{Validation}
 \label{sec:val}
-We validate the correct operation of the LU factorization by using it to solve known linear systems. For this we use a number of matrices from https://math.nist.gov/MatrixMarket/. By taking the dot product of known solution vectors with these matrices we create a system of equation of the matrix and the outcome of the dot product. Using the LU factorization we solve this system. If the solution matches the known solution vector our LU factorization must be correct. 
+We validate our factorization by applying it to solve a known linear systems. To create these systems we use a number of matrices from Matrix Market. We do this by taking the dot product of known solution vectors and various matrices creating different systems of equations. Using the created LU factorization of the matrices we then compute solutions to the systems. If the computed solutions matches the known solution vectors our LU factorization algorithm must be correct. 
 
-For each system we try we store the relative errors: $\frac{||\widetilde{x}-x||}{||x||}$. Here $\widetilde{x}$ is the solution computed by our implementation and $x$ the actual solution known from the solution vector. $||x||$ denotes the Euclidean Norm: $\sqrt{\Sigma x_i^2}$.
+For each solved system we store a relative errors: $\frac{||\widetilde{x}-x||}{||x||}$. Here $\widetilde{x}$ is the solution computed using our implementation and $x$ the actual solution known from the solution vector. $||x||$ denotes the Euclidean Norm: $\sqrt{\Sigma x_i^2}$.
 
 We used the following matrices from Matrix-Market:
 \begin{multicols}{2}
@@ -76,7 +76,7 @@ We used the following matrices from Matrix-Market:
 \end{enumerate}
 \end{multicols}
 
-We gave the solution vectors five different values:
+We gave the solution vectors five distinct patterns:
 
 \begin{description}
     \item [ones] all ones
@@ -87,10 +87,10 @@ We gave the solution vectors five different values:
 \end{description}
 
 \section{Benchmark}
-Finally for each of the matrices we benchmark the time to factorize the and to then solve each of the solution vectors with the factored system. The benchmarks where carried out on the Linux systems on the Core i7 machines in room 302/304 at the LIACS.
+For each of the matrices we benchmark the time it takes to factorize and the time it takes to solve each created linear systems. The benchmarks were carried out on the Linux systems on the Core i7 machines in room 302/304 at the LIACS.
 
 \section{Results}
-In \autoref{tab:errors} we see the relative error per solution vector per matrix as defined in \autoref{sec:val}. Then in \autoref{tab:factoring} the result of benchmarking the factoring of the different matrices. The measured run time is in seconds. Finally in \autoref{tab:solving} we have the 
+In \autoref{tab:errors} we see the relative error per solution vector per matrix as defined in \autoref{sec:val}. Then in \autoref{tab:factoring} we show the time it takes to factor the different matrices. The reported run time is in seconds. Finally in \autoref{tab:solving} we have the run time needed to solve all the different systems for each of the matrices, again in seconds.
 
 \begin{table}
     \begin{tabular}{ l c c c c c }
@@ -139,7 +139,7 @@ In \autoref{tab:errors} we see the relative error per solution vector per matrix
 \begin{table}
     \begin{tabular}{ l c c c c c }
     \firsthline
-    \multicolumn{6}{c}{Solving Runtime} \\
+    \multicolumn{6}{c}{Solving Run time} \\
     \cline{2-6}
     Matrix & ones & point ones & alternating ones & alternating fives & alternating hundreds \\
     \hline
@@ -160,17 +160,17 @@ In \autoref{tab:errors} we see the relative error per solution vector per matrix
 \end{table}
 
 \section{Discussion}
-We see our implementation fails to correctly factor or solve Lucifora/cell1 or Gaertner/nopoly. Nopoly with the all ones solution vector even has an extreme error. The nopoly matrix has the highest run time at $137$ seconds. This is surprising as Averous/epb1 has an even larger size and more non zeros. We expect the non zeros are spread over different columns causing a lot of non zeros to appear during the factorization. Gaertner/nopoly also has the largest run time for solving the different systems. This is expected. The smallest matrix has the lowest factoring time while matrices with a lower number of non zeros have a dramatically higher run time. This is again caused by many more non zeros appearing during the factoring.
+We see our implementation fails to correctly factor or solve Lucifora/cell1 or Gaertner/nopoly. The last one even reports a extremely high error on the system of equations created with the all ones solution vector. The nopoly matrix also has the highest run time at $137$ seconds. This initially surprised us as the Averous/epb1 matrix has an even larger size and more non zeros entries. We expect the non zeros are spread over different columns in Gaertner/nopoly causing a lot of non zeros to appear during the factorization. Gaertner/nopoly also has the largest run time for solving the different systems. This is consistent with it getting the most non zero values during factoring. The smallest matrix has the lowest factoring time while matrices with a lower number of non zeros at the start have a dramatically higher run time. This is again caused by many more non zeros appearing in the larger matrices then in the smallest.
 
 Finally we see a number of possible optimization to the current implementation:
 \begin{enumerate}
-\item As the density of the matrices increases during factoring the relative overhead of working in compressed row format grows. Switching to a normal dense matrix after a critical point will provide a speedup in factoring and solving. 
+\item As the density of the matrices increases during factoring the relative overhead of working in compressed row format grows. Switching to a normal dense matrix after some critical point will provide a speedup in factoring and solving. 
 
-\item Currently rows need to be moved as soon as one element needs to be added. We can add some extra unused space between rows to allow them to grow without having to move them. 
+\item Currently rows need to be moved as soon as an element needs to be added. We can reserve some space between rows to allow a row to grow without having to be moved. 
 
-\item When adding two rows together they are added into a dense row. However when broadcasting the values back into a compressed row we need to iterate over the complete dense row to find the non zero values. Keeping a list of non zeros in the dense row would prevent this and speed up the factoring.
+\item When adding two rows together they are added into a third dense row. However when changing this resulting row back to a sparse format we need to iterate over the complete dense row to find all the non zero values. Keeping a list of the indices of the non zeros in the dense row would allow us to skip this and speed up the factoring.
 
-\item Currently the values and column indexes are stored in large continues storage. However both are often used simultaneously. We might get a speedup if we store value and corresponding column as a pair in a single continues storage. 
+\item Currently values and column indexes are stored in separate large continues arrays. However both are often used simultaneously. We might get a speedup if we store value and corresponding column as a pair in a single continues array. 
 \end{enumerate}
 
 \clearpage
