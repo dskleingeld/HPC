@@ -1,0 +1,161 @@
+%
+% verslag.tex   18.2.2019
+% Voorbeeld LaTeX-file voor verslagen bij Kunstmatige Intelligentie
+% http://www.liacs.leidenuniv.nl/~kosterswa/AI/verslag.tex
+%
+% Gebruik:
+%   pdflatex verslag.tex
+%
+
+\documentclass[10pt]{article}
+
+\parindent=0pt
+
+\usepackage{fullpage}
+
+\frenchspacing
+
+\usepackage{microtype}
+\usepackage{scrextend}
+\usepackage[english,english]{babel}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{hyperref}
+%\usepackage{amsmath}
+%\usepackage{listings}
+\usepackage{subcaption}
+
+% Er zijn talloze parameters ...
+%\lstset{language=C++, showstringspaces=false, basicstyle=\small,
+%  numbers=left, numberstyle=\tiny, numberfirstline=false, breaklines=true,
+%  stepnumber=1, tabsize=8,
+%  commentstyle=\ttfamily, identifierstyle=\ttfamily,
+%  stringstyle=\itshape}
+
+%\usepackage[setpagesize=false,colorlinks=true,linkcolor=red,urlcolor=blue,pdftitle={Het grote probleem},pdfauthor={David Kleingeld}]{hyperref}
+
+\author{David Kleingeld, s1432982}
+\title{}
+
+\begin{document}
+
+\selectlanguage{english}
+
+\maketitle
+
+\section{Introduction}
+Many problems in science depend on solving linear systems. To speed up computations they depend on LU factorisation. This can be viewed as a matrix form of gaussian elimination. LU factorisation was introduced by polish mathematician Tadeusz Banachiewicz \cite{lu}.
+Often these matrices are extremely large while containing few non zero entries, so called sparse matrices. The LU factorisation can be sped up by skipping these entries. There are a number of schemes to store only non zero entries for sparse matrices. The simplest, Dictionary of keys, stores the value row and column for each non zero entry. Here we have implemented a Sparse LU Factorization kernel using compressed row storage. With compressed row storage only the non zero entries in each rows are stored. The order of the entries is preserved and for each entry the column is kept with it \cite{compressedRowStorage}. We discuss the implementation, how we validated it, how we benchmark, the results followed by a discussion of these where we also point out possible improvements. 
+
+\section{Implementation}
+
+During lu factoring we traverse the columns of the matrix, for each column we designate a pivot, the element on the diagonal in that column. We add the row with this pivot to the rows below it scaled such that the elements below the pivot become zero. This will be problematic when the pivot value is small while the values below it are large. Then the rows will be scaled by a very large factor. Future pivot values will now have extremer values reducing numerical precision. 
+We can mitigate most of this using partial pivotting. Here for each pivot we check if there is a row with a larger value in the column below the current pivot. If there is we exchange rows so the larger value is now the current pivot. This way we mostly do not scale by large factors. We keep a list of applied row interchanges, using it we can still solve the system.
+
+Another difficulty is the actual adding of two rows. This being key to the algoritme it happens often. When we add two sparse rows more non zero elements can appear in the resulting row. However as we keep changing elements below pivots to zero non zero values will also disappear. We store the compressed rows after one another, thus expanding is not an option. Instead, when a row needs to expand we move after the last row. This creates gaps in between compressed rows reducing data locality which reduces performance and increasing the required memory to store the rows. The solution is to every once in a while move all rows to a new memory space. Here we put them against eachoter again. As a further optimisation we can create some small gaps between the rows to allow them to expand a bit before they need to be moved to the end of the memory space again.
+
+\section{Validation}
+\label{sec:val}
+We validate the correct operation of the LU factorisation by using it to solve known linear systems. For this we use a number of matrices from https://math.nist.gov/MatrixMarket/. By taking the dot product of known solution vectors with these matrices we create a system of equation of the matrix and the outcome of the dot product. Using the LU factorisation we solve this system. If the solution matches the known solution vector our LU factorisation must be correct. 
+
+For each system we try we store the relative errors: $\frac{||\widetilde{x}-x||}{||x||}$. Here $\widetilde{x}$ is the solution computed by our implementation and $x$ the actual solution known from the solution vector. $||x||$ denotes the Euclidean Norm: $\sqrt{\Sigma x_i^2}$.
+
+We used the following matrices from MatrixMarket:
+\begin{multicols}{2}
+\begin{enumerate}
+    \item HB/mcfe
+    \item Schenk\_IBMNA/c-21
+    \item Oberwolfach/flowmeter5
+    \item Averous/epb1
+    \item Grund/meg4
+    \item Lucifora/cell1
+    \item Gaertner/nopoly
+    \item Bai/mhd4800b
+    \item FIDAP/ex10
+    \item Okunbor/aft01
+\end{enumerate}
+\end{multicols}
+
+We gave the solution vectors five different values:
+
+\begin{description}
+    \item [ones] all ones
+    \item [point ones] all value $0.1$
+    \item [alternating ones] all alternating $+1$ and $-1$
+    \item [alternating fives] all alternating $+5$ and $-5$
+    \item [alternating hunderds] all alternating $+100$ and $-100$
+\end{description}
+
+\section{Benchmark}
+Finally for each of the matrices we benchmark the time to factorise the and to then solve each of the solution vectors with the factored system. The benchmarks where carried out on the Linux systems on the Core i7 machines in room 302/304 at the LIACS.
+
+\section{Results}
+Our implementation currently crashes while trying to factor:
+
+//TODO crashy
+
+In \autoref{tab:errors} we see the relative error per solution vector per matrix as defined in \autoref{sec:val}. Then in \autoref{tab:factoring} the result of benchmarking the factoring of the different matrices. The measured runtime is in seconds. Finally in \autoref{tab:solving} we have the 
+
+\begin{table}
+    \begin{tabular}{ l | c | c | c | c | c }
+    matrix & ones & point ones & alternating ones & alternating fives & alternating hunderds \\
+    matrix &  &  &  &  &  \\
+    HB/mcfe &  &  &  &  &  \\
+    Schenk\_IBMNA/c-21 &  &  &  &  &  \\
+    Oberwolfach/flowmeter5 &  &  &  &  &  \\
+    Averous/epb1 &  &  &  &  &  \\
+    Grund/meg4 &  &  &  &  &  \\
+    Lucifora/cell1 &  &  &  &  &  \\
+    Gaertner/nopoly &  &  &  &  &  \\
+    Bai/mhd4800b &  &  &  &  &  \\
+    FIDAP/ex10 &  &  &  &  &  \\
+    Okunbor/aft01 &  &  &  &  &  \\
+    \end{tabular}
+    \label{tab:errors}
+\end{table}
+
+\begin{table}
+    \begin{tabular}{ l | c | r }
+    matrix name & factoring time (seconds) \\
+    matrix & \\
+    HB/mcfe & \\
+    Schenk\_IBMNA/c-21 &  \\
+    Oberwolfach/flowmeter5 &  \\
+    Averous/epb1 &  \\
+    Grund/meg4 & \\
+    Lucifora/cell1 & \\
+    Gaertner/nopoly & \\
+    Bai/mhd4800b & \\
+    FIDAP/ex10 & \\
+    Okunbor/aft01 & \\
+    \end{tabular}
+    \label{tab:factoring}
+\end{table}
+
+\begin{table}
+    \begin{tabular}{ l | c | c | c | c | c }
+    matrix & ones & point ones & alternating ones & alternating fives & alternating hunderds \\
+    matrix &  &  &  &  &  \\
+    HB/mcfe &  &  &  &  &  \\
+    Schenk\_IBMNA/c-21 &  &  &  &  &  \\
+    Oberwolfach/flowmeter5 &  &  &  &  &  \\
+    Averous/epb1 &  &  &  &  &  \\
+    Grund/meg4 &  &  &  &  &  \\
+    Lucifora/cell1 &  &  &  &  &  \\
+    Gaertner/nopoly &  &  &  &  &  \\
+    Bai/mhd4800b &  &  &  &  &  \\
+    FIDAP/ex10 &  &  &  &  &  \\
+    Okunbor/aft01 &  &  &  &  &  \\
+    \end{tabular}
+    \label{tab:solving}
+\end{table}
+
+\section{Discussion}
+
+
+
+\clearpage
+\bibliography{main.bib}
+\bibliographystyle{IEEEtran}
+
+\end{document}

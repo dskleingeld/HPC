@@ -46,7 +46,6 @@ main(int argc, char **argv)
   bool ok(false);
   //must be static to make sure it is not allocated on the heap
   static CompressedRowMatrix a;
-  PermutationMatrix p;
   ok = load_matrix_market(argv[1], MAX_N_ELEMENTS, MAX_N_ROWS,
                           nnz, a.n_rows, n_cols,
                           a.values, a.col_ind, a.row_ptr_begin, a.row_ptr_end);
@@ -56,12 +55,31 @@ main(int argc, char **argv)
     fprintf(stderr, "failed to load matrix.\n");
     return -1;
   }
+/////////////////////////////////////////////////////////////////////
+
+  double pattern[5][2] = {
+    {1., 1.},
+    {.1, .1},
+    {1., -1.},
+    {5.,-5.},
+    {100.,-100.},
+  };
+
+  double solution_vector[5][MAX_N_ROWS];
+  double b_vec[5][MAX_N_ROWS];
+
+  for(int i=0; i<5; i++){
+    init_array(solution_vector[i], a.n_rows, pattern[i]);
+    matrix_vector_product(a, solution_vector[i], b_vec[i]);
+  }
+
 //////////////////////////////////////////////////////////////////////
 
     struct timespec start_time;
     clock_gettime(CLOCK_REALTIME, &start_time);
 
     /* Perform LU factorization here */
+    static PermutationMatrix p;
     lu_factorise(a, p);
 
     struct timespec end_time;
@@ -76,16 +94,6 @@ main(int argc, char **argv)
 
 //////////////////////////////////////////////////////////////////////
 
-  double pattern[5][2] = {
-    {1., 1.},
-    {.1, .1},
-    {1., -1.},
-    {5.,-5.},
-    {100.,-100.},
-  };
-
-  double solution_vector[5][MAX_N_ROWS];
-  double b_vec[5][MAX_N_ROWS];
   double x[MAX_N_ROWS];
   double elapsed_times[5];
   bool errors[5] = {false};
@@ -93,9 +101,6 @@ main(int argc, char **argv)
   bool any_error = false;
 
   for(int i=0; i<5; i++){
-    init_array(solution_vector[i], a.n_rows, pattern[i]);
-    matrix_vector_product(a, solution_vector[i], b_vec[i]);
-
     struct timespec start_time;
     clock_gettime(CLOCK_REALTIME, &start_time);
 
@@ -125,8 +130,7 @@ main(int argc, char **argv)
                 <<std::endl;*/
       }
     }
-    relative_error[i] = normed_error_size/normed_error_size;
-    std::cout<<i; //print some progress indication
+    relative_error[i] = std::sqrt(normed_error_size)/std::sqrt(normed_actual_solution);
   }
   std::cout<<std::endl;
 
@@ -136,7 +140,8 @@ main(int argc, char **argv)
         std::cout<<"ERROR ENCOUNTERD IN PATTERN: "<<i<<std::endl;
       }
     } else {
-      fprintf(stderr, "pattern %d: %f s\n", i, elapsed_times[i]);
+      fprintf(stderr, "pattern %d: %fs, relative error: %f\n", 
+              i, elapsed_times[i], relative_error[i]);
     }
   }
 
