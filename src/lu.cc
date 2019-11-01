@@ -192,7 +192,7 @@ void CompressedRowMatrix::allocate(int numb_elements, int& ptr_begin,
 
   ptr_begin = free;
   ptr_reserved = free + numb_elements + N_TO_OVERALLOCATE;
-  free+=numb_elements + N_TO_OVERALLOCATE;
+  free+=numb_elements + N_TO_OVERALLOCATE+1;
 }
 
 //geather
