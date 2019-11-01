@@ -20,15 +20,15 @@ void PermutationMatrix::identity(size_t n_rows){
 //copy replacement-row back into the array
 void CompressedRowMatrix::swap_rows(const int row, const int replacement_row){
 
-  auto row_begin = row_ptr_begin[row];
+  int row_begin = row_ptr_begin[row];
   row_ptr_begin[row] = row_ptr_begin[replacement_row];
   row_ptr_begin[replacement_row] = row_begin;
 
-  auto row_end = row_ptr_end[row];
+  int row_end = row_ptr_end[row];
   row_ptr_end[row] = row_ptr_end[replacement_row];
   row_ptr_end[replacement_row] = row_end;  
 
-  auto row_reserved = row_ptr_reserved[row];
+  int row_reserved = row_ptr_reserved[row];
   row_ptr_reserved[row] = row_ptr_reserved[replacement_row];
   row_ptr_reserved[replacement_row] = row_reserved;
 }
@@ -125,7 +125,7 @@ bool find_column(CompressedRowMatrix& m, int haystack_row,
       flat_index<=m.row_ptr_end[haystack_row]; 
       flat_index++){
 
-    auto hay_column = m.col_ind[flat_index];
+    int hay_column = m.col_ind[flat_index];
     //if (hay_column > needle_column){ //opt Re-enable
     //  return false;
     //} else if (hay_column == needle_column) {
@@ -220,9 +220,9 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
   }
 
   //geather into sparse row
-  auto flat_index = lu.row_ptr_begin[row];
+  int flat_index = lu.row_ptr_begin[row];
   for(int column=0; column<lu.n_rows; column++){
-    auto value = dense_row.values[column];
+    double value = dense_row.values[column];
     if (value!=0.0){ //skip zero values
       lu.values[flat_index] = value;
       lu.col_ind[flat_index] = column;
@@ -237,7 +237,7 @@ void overwrite_sparse_row_with_dense(DenseIndexedRow& dense_row,
 void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivot){
 
   //walk until we get the flat index of the pivot column in the other row
-  auto pivot_column = pivot_row;
+  int pivot_column = pivot_row;
   int pivot_column_in_other_row; //set by find column
   bool found = find_column(lu, other_row, pivot_column, pivot_column_in_other_row);
   if (!found){return;} // no pivot in this column => we are done 
@@ -246,15 +246,15 @@ void add_rows(CompressedRowMatrix& lu, int pivot_row, int other_row, double pivo
 
   //scatter elements after mult of other_row to a temp row in dense form
   for(int k=lu.row_ptr_begin[other_row]; k<=lu.row_ptr_end[other_row]; k++){
-    auto value = lu.values[k]; 
-    auto column = lu.col_ind[k];
+    double value = lu.values[k]; 
+    int column = lu.col_ind[k];
     dense_row.values[column] = value;
   }
   
-  auto mult = lu.values[pivot_column_in_other_row]/pivot;
+  double mult = lu.values[pivot_column_in_other_row]/pivot;
   //add scaled pivot_row to scatterd other row in dense form
   for(int k=lu.row_ptr_begin[pivot_row]+1; k<=lu.row_ptr_end[pivot_row]; k++){
-    auto column = lu.col_ind[k];
+    int column = lu.col_ind[k];
     if (column > pivot_column){ //TODO is this check needed?
       dense_row.values[column] -= mult*lu.values[k];
     }
@@ -272,7 +272,7 @@ void lu_factorise(CompressedRowMatrix& lu,
                   PermutationMatrix& p){
 
   p.identity(lu.n_rows);
-  auto n_columns = lu.n_rows;
+  int n_columns = lu.n_rows;
   
   for(int column=0; column<n_columns; column++){
     double pivot = partial_pivot(p, lu, column);

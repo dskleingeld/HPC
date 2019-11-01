@@ -132,7 +132,6 @@ main(int argc, char **argv)
     }
     relative_error[i] = std::sqrt(normed_error_size)/std::sqrt(normed_actual_solution);
   }
-  std::cout<<std::endl;
 
   for(int i=0; i<5; i++){
     if(any_error){
@@ -140,8 +139,7 @@ main(int argc, char **argv)
     } 
     fprintf(stderr, "pattern %d: %fs, relative error: %f\n", 
             i, elapsed_times[i], relative_error[i]);
-
-  }
-
+    }
+  std::cout<<std::endl;
   return 0;
 }

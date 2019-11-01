@@ -5,8 +5,8 @@ void matrix_vector_product(CompressedRowMatrix& matrix, double in_vector[], doub
   for (int row=0; row<matrix.n_rows; row++){
     out_vector[row] = 0;
     for (int i=matrix.row_ptr_begin[row]; i<=matrix.row_ptr_end[row]; i++){
-      auto value = matrix.values[i];
-      auto column = matrix.col_ind[i];
+      double value = matrix.values[i];
+      int column = matrix.col_ind[i];
       out_vector[row] += value * in_vector[column];
     }
   }
@@ -22,8 +22,8 @@ void get_permuted_vector(const double array[], double pb[],
   for(int i=0; i<length; i++){index[i]=i;}
 
   for(int i=0; i<length; i++){
-    auto v = p.permuted_to_original_index[i];
-    auto temp = index[i];
+    int v = p.permuted_to_original_index[i];
+    int temp = index[i];
     index[i] = index[v];
     index[v] = temp;
   }
@@ -62,10 +62,10 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
             flat_idx<=lu.row_ptr_end[row]; flat_idx++){
 
             //only iterate till column<row-1
-            auto column = lu.col_ind[flat_idx];
+            int column = lu.col_ind[flat_idx];
             if(column>row-1){break;}
 
-            auto A = lu.values[flat_idx];
+            double A = lu.values[flat_idx];
             c[row] -= A * c[column];
         }
     }
@@ -84,7 +84,7 @@ void solve_system(CompressedRowMatrix& lu, PermutationMatrix& p,
           if (lu.col_ind[flat_idx]<row+1){ continue; }
 
           double A = lu.values[flat_idx];
-          auto column = lu.col_ind[flat_idx];
+          int column = lu.col_ind[flat_idx];
           x[row] -= A * x[column];
         }
         double A;
